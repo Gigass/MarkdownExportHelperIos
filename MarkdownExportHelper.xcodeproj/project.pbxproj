@@ -6,27 +6,34 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1AE190192E332C8D0009FE64 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1AE190182E332C8D0009FE64 /* MarkdownUI */; };
+		1AE1901B2E332C9C0009FE64 /* ToastUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1AE1901A2E332C9C0009FE64 /* ToastUI */; };
+		1AE1901D2E332CAD0009FE64 /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = 1AE1901C2E332CAD0009FE64 /* Ink */; };
+		1AE1901F2E332CAD0009FE64 /* ink-cli in Frameworks */ = {isa = PBXBuildFile; productRef = 1AE1901E2E332CAD0009FE64 /* ink-cli */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
-		1A943B562E33220000E80034 /* PBXContainerItemProxy */ = {
+		1AE18FFC2E332A660009FE64 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1A943B3F2E3321FE00E80034 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 1A943B462E3321FE00E80034;
+			remoteGlobalIDString = 1AE18FED2E332A640009FE64;
 			remoteInfo = MarkdownExportHelper;
 		};
-		1A943B602E33220000E80034 /* PBXContainerItemProxy */ = {
+		1AE190062E332A660009FE64 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1A943B3F2E3321FE00E80034 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 1A943B462E3321FE00E80034;
+			remoteGlobalIDString = 1AE18FED2E332A640009FE64;
 			remoteInfo = MarkdownExportHelper;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		1A943B472E3321FE00E80034 /* MarkdownExportHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownExportHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1A943B552E33220000E80034 /* MarkdownExportHelperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1A943B5F2E33220000E80034 /* MarkdownExportHelperUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1AE18FEE2E332A640009FE64 /* MarkdownExportHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownExportHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1AE18FFB2E332A660009FE64 /* MarkdownExportHelperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1AE190052E332A660009FE64 /* MarkdownExportHelperUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -45,24 +52,43 @@
 			path = MarkdownExportHelperUITests;
 			sourceTree = "<group>";
 		};
+		1AE18FEF2E332A640009FE64 /* MarkdownExportHelper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MarkdownExportHelper;
+			sourceTree = "<group>";
+		};
+		1AE18FFE2E332A660009FE64 /* MarkdownExportHelperTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MarkdownExportHelperTests;
+			sourceTree = "<group>";
+		};
+		1AE190082E332A660009FE64 /* MarkdownExportHelperUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MarkdownExportHelperUITests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		1A943B442E3321FE00E80034 /* Frameworks */ = {
+		1AE18FEB2E332A640009FE64 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1AE1901D2E332CAD0009FE64 /* Ink in Frameworks */,
+				1AE1901B2E332C9C0009FE64 /* ToastUI in Frameworks */,
+				1AE1901F2E332CAD0009FE64 /* ink-cli in Frameworks */,
+				1AE190192E332C8D0009FE64 /* MarkdownUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1AE18FF82E332A660009FE64 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1A943B522E33220000E80034 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		1A943B5C2E33220000E80034 /* Frameworks */ = {
+		1AE190022E332A660009FE64 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -78,6 +104,9 @@
 				1A943B492E3321FE00E80034 /* MarkdownExportHelper */,
 				1A943B582E33220000E80034 /* MarkdownExportHelperTests */,
 				1A943B622E33220000E80034 /* MarkdownExportHelperUITests */,
+				1AE18FEF2E332A640009FE64 /* MarkdownExportHelper */,
+				1AE18FFE2E332A660009FE64 /* MarkdownExportHelperTests */,
+				1AE190082E332A660009FE64 /* MarkdownExportHelperUITests */,
 				1A943B482E3321FE00E80034 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -85,9 +114,9 @@
 		1A943B482E3321FE00E80034 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1A943B472E3321FE00E80034 /* MarkdownExportHelper.app */,
-				1A943B552E33220000E80034 /* MarkdownExportHelperTests.xctest */,
-				1A943B5F2E33220000E80034 /* MarkdownExportHelperUITests.xctest */,
+				1AE18FEE2E332A640009FE64 /* MarkdownExportHelper.app */,
+				1AE18FFB2E332A660009FE64 /* MarkdownExportHelperTests.xctest */,
+				1AE190052E332A660009FE64 /* MarkdownExportHelperUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,72 +124,76 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1A943B462E3321FE00E80034 /* MarkdownExportHelper */ = {
+		1AE18FED2E332A640009FE64 /* MarkdownExportHelper */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1A943B692E33220000E80034 /* Build configuration list for PBXNativeTarget "MarkdownExportHelper" */;
+			buildConfigurationList = 1AE1900D2E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelper" */;
 			buildPhases = (
-				1A943B432E3321FE00E80034 /* Sources */,
-				1A943B442E3321FE00E80034 /* Frameworks */,
-				1A943B452E3321FE00E80034 /* Resources */,
+				1AE18FEA2E332A640009FE64 /* Sources */,
+				1AE18FEB2E332A640009FE64 /* Frameworks */,
+				1AE18FEC2E332A640009FE64 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				1A943B492E3321FE00E80034 /* MarkdownExportHelper */,
+				1AE18FEF2E332A640009FE64 /* MarkdownExportHelper */,
 			);
 			name = MarkdownExportHelper;
 			packageProductDependencies = (
+				1AE190182E332C8D0009FE64 /* MarkdownUI */,
+				1AE1901A2E332C9C0009FE64 /* ToastUI */,
+				1AE1901C2E332CAD0009FE64 /* Ink */,
+				1AE1901E2E332CAD0009FE64 /* ink-cli */,
 			);
 			productName = MarkdownExportHelper;
-			productReference = 1A943B472E3321FE00E80034 /* MarkdownExportHelper.app */;
+			productReference = 1AE18FEE2E332A640009FE64 /* MarkdownExportHelper.app */;
 			productType = "com.apple.product-type.application";
 		};
-		1A943B542E33220000E80034 /* MarkdownExportHelperTests */ = {
+		1AE18FFA2E332A660009FE64 /* MarkdownExportHelperTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1A943B6C2E33220000E80034 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperTests" */;
+			buildConfigurationList = 1AE190102E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperTests" */;
 			buildPhases = (
-				1A943B512E33220000E80034 /* Sources */,
-				1A943B522E33220000E80034 /* Frameworks */,
-				1A943B532E33220000E80034 /* Resources */,
+				1AE18FF72E332A660009FE64 /* Sources */,
+				1AE18FF82E332A660009FE64 /* Frameworks */,
+				1AE18FF92E332A660009FE64 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				1A943B572E33220000E80034 /* PBXTargetDependency */,
+				1AE18FFD2E332A660009FE64 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				1A943B582E33220000E80034 /* MarkdownExportHelperTests */,
+				1AE18FFE2E332A660009FE64 /* MarkdownExportHelperTests */,
 			);
 			name = MarkdownExportHelperTests;
 			packageProductDependencies = (
 			);
 			productName = MarkdownExportHelperTests;
-			productReference = 1A943B552E33220000E80034 /* MarkdownExportHelperTests.xctest */;
+			productReference = 1AE18FFB2E332A660009FE64 /* MarkdownExportHelperTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		1A943B5E2E33220000E80034 /* MarkdownExportHelperUITests */ = {
+		1AE190042E332A660009FE64 /* MarkdownExportHelperUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1A943B6F2E33220000E80034 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperUITests" */;
+			buildConfigurationList = 1AE190132E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperUITests" */;
 			buildPhases = (
-				1A943B5B2E33220000E80034 /* Sources */,
-				1A943B5C2E33220000E80034 /* Frameworks */,
-				1A943B5D2E33220000E80034 /* Resources */,
+				1AE190012E332A660009FE64 /* Sources */,
+				1AE190022E332A660009FE64 /* Frameworks */,
+				1AE190032E332A660009FE64 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				1A943B612E33220000E80034 /* PBXTargetDependency */,
+				1AE190072E332A660009FE64 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				1A943B622E33220000E80034 /* MarkdownExportHelperUITests */,
+				1AE190082E332A660009FE64 /* MarkdownExportHelperUITests */,
 			);
 			name = MarkdownExportHelperUITests;
 			packageProductDependencies = (
 			);
 			productName = MarkdownExportHelperUITests;
-			productReference = 1A943B5F2E33220000E80034 /* MarkdownExportHelperUITests.xctest */;
+			productReference = 1AE190052E332A660009FE64 /* MarkdownExportHelperUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -173,16 +206,16 @@
 				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
-					1A943B462E3321FE00E80034 = {
+					1AE18FED2E332A640009FE64 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					1A943B542E33220000E80034 = {
+					1AE18FFA2E332A660009FE64 = {
 						CreatedOnToolsVersion = 16.4;
-						TestTargetID = 1A943B462E3321FE00E80034;
+						TestTargetID = 1AE18FED2E332A640009FE64;
 					};
-					1A943B5E2E33220000E80034 = {
+					1AE190042E332A660009FE64 = {
 						CreatedOnToolsVersion = 16.4;
-						TestTargetID = 1A943B462E3321FE00E80034;
+						TestTargetID = 1AE18FED2E332A640009FE64;
 					};
 				};
 			};
@@ -195,34 +228,40 @@
 			);
 			mainGroup = 1A943B3E2E3321FE00E80034;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1A943B812E33252800E80034 /* XCRemoteSwiftPackageReference "swift-algorithms" */,
+				1A943B822E33258400E80034 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				1A943B832E33259400E80034 /* XCRemoteSwiftPackageReference "ink" */,
+				1AE18FE92E3327AF0009FE64 /* XCRemoteSwiftPackageReference "ToastUI" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1A943B482E3321FE00E80034 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1A943B462E3321FE00E80034 /* MarkdownExportHelper */,
-				1A943B542E33220000E80034 /* MarkdownExportHelperTests */,
-				1A943B5E2E33220000E80034 /* MarkdownExportHelperUITests */,
+				1AE18FED2E332A640009FE64 /* MarkdownExportHelper */,
+				1AE18FFA2E332A660009FE64 /* MarkdownExportHelperTests */,
+				1AE190042E332A660009FE64 /* MarkdownExportHelperUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1A943B452E3321FE00E80034 /* Resources */ = {
+		1AE18FEC2E332A640009FE64 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1A943B532E33220000E80034 /* Resources */ = {
+		1AE18FF92E332A660009FE64 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1A943B5D2E33220000E80034 /* Resources */ = {
+		1AE190032E332A660009FE64 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -232,21 +271,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1A943B432E3321FE00E80034 /* Sources */ = {
+		1AE18FEA2E332A640009FE64 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1A943B512E33220000E80034 /* Sources */ = {
+		1AE18FF72E332A660009FE64 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1A943B5B2E33220000E80034 /* Sources */ = {
+		1AE190012E332A660009FE64 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -256,15 +295,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		1A943B572E33220000E80034 /* PBXTargetDependency */ = {
+		1AE18FFD2E332A660009FE64 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1A943B462E3321FE00E80034 /* MarkdownExportHelper */;
-			targetProxy = 1A943B562E33220000E80034 /* PBXContainerItemProxy */;
+			target = 1AE18FED2E332A640009FE64 /* MarkdownExportHelper */;
+			targetProxy = 1AE18FFC2E332A660009FE64 /* PBXContainerItemProxy */;
 		};
-		1A943B612E33220000E80034 /* PBXTargetDependency */ = {
+		1AE190072E332A660009FE64 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1A943B462E3321FE00E80034 /* MarkdownExportHelper */;
-			targetProxy = 1A943B602E33220000E80034 /* PBXContainerItemProxy */;
+			target = 1AE18FED2E332A640009FE64 /* MarkdownExportHelper */;
+			targetProxy = 1AE190062E332A660009FE64 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -385,7 +424,7 @@
 			};
 			name = Release;
 		};
-		1A943B6A2E33220000E80034 /* Debug */ = {
+		1AE1900E2E332A660009FE64 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -424,7 +463,7 @@
 			};
 			name = Debug;
 		};
-		1A943B6B2E33220000E80034 /* Release */ = {
+		1AE1900F2E332A660009FE64 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -463,7 +502,7 @@
 			};
 			name = Release;
 		};
-		1A943B6D2E33220000E80034 /* Debug */ = {
+		1AE190112E332A660009FE64 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -486,7 +525,7 @@
 			};
 			name = Debug;
 		};
-		1A943B6E2E33220000E80034 /* Release */ = {
+		1AE190122E332A660009FE64 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -509,7 +548,7 @@
 			};
 			name = Release;
 		};
-		1A943B702E33220000E80034 /* Debug */ = {
+		1AE190142E332A660009FE64 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -531,7 +570,7 @@
 			};
 			name = Debug;
 		};
-		1A943B712E33220000E80034 /* Release */ = {
+		1AE190152E332A660009FE64 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -565,34 +604,92 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1A943B692E33220000E80034 /* Build configuration list for PBXNativeTarget "MarkdownExportHelper" */ = {
+		1AE1900D2E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelper" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1A943B6A2E33220000E80034 /* Debug */,
-				1A943B6B2E33220000E80034 /* Release */,
+				1AE1900E2E332A660009FE64 /* Debug */,
+				1AE1900F2E332A660009FE64 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1A943B6C2E33220000E80034 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperTests" */ = {
+		1AE190102E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1A943B6D2E33220000E80034 /* Debug */,
-				1A943B6E2E33220000E80034 /* Release */,
+				1AE190112E332A660009FE64 /* Debug */,
+				1AE190122E332A660009FE64 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1A943B6F2E33220000E80034 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperUITests" */ = {
+		1AE190132E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1A943B702E33220000E80034 /* Debug */,
-				1A943B712E33220000E80034 /* Release */,
+				1AE190142E332A660009FE64 /* Debug */,
+				1AE190152E332A660009FE64 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1A943B812E33252800E80034 /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.1;
+			};
+		};
+		1A943B822E33258400E80034 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+		1A943B832E33259400E80034 /* XCRemoteSwiftPackageReference "ink" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/johnsundell/ink.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.6.0;
+			};
+		};
+		1AE18FE92E3327AF0009FE64 /* XCRemoteSwiftPackageReference "ToastUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/quanshousio/ToastUI.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1AE190182E332C8D0009FE64 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A943B822E33258400E80034 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+		1AE1901A2E332C9C0009FE64 /* ToastUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1AE18FE92E3327AF0009FE64 /* XCRemoteSwiftPackageReference "ToastUI" */;
+			productName = ToastUI;
+		};
+		1AE1901C2E332CAD0009FE64 /* Ink */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A943B832E33259400E80034 /* XCRemoteSwiftPackageReference "ink" */;
+			productName = Ink;
+		};
+		1AE1901E2E332CAD0009FE64 /* ink-cli */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1A943B832E33259400E80034 /* XCRemoteSwiftPackageReference "ink" */;
+			productName = "ink-cli";
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1A943B3F2E3321FE00E80034 /* Project object */;
 }
