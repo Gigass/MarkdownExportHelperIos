@@ -51,6 +51,7 @@ struct ContentView: View {
     @State private var showToast = false
     @State private var toastConfig = ToastConfig.success(message: "")
     @State private var showPreview = true // For compact view toggle
+    @StateObject private var imageSaver = ImageSaver()
 
     private var renderableView: some View {
         Markdown(markdownText)
@@ -152,7 +153,7 @@ struct ContentView: View {
             Spacer()
             Button(action: exportAsHTML) { Label("HTML", systemImage: "safari") }
             Spacer()
-            Button(action: exportAsMarkdown) { Label("MD", systemImage: "markdown") }
+            Button(action: exportAsMarkdown) { Label("MD", systemImage: "doc.plaintext") }
         }
         .padding()
         .labelStyle(.iconOnly)
@@ -183,12 +184,21 @@ struct ContentView: View {
     // MARK: - Export Functions
     
     private func exportAsImage() {
-        if let image = renderableView.renderAsImage() {
-            share(items: [image])
-            presentToast(config: .success(message: "Image Ready!"))
-        } else {
+        guard let image = renderableView.renderAsImage() else {
             presentToast(config: .failure(message: "Failed to render image."))
+            return
         }
+        
+        imageSaver.onSuccess = {
+            presentToast(config: .success(message: "Saved to Photos!"))
+            self.addToHistory(self.markdownText)
+        }
+        imageSaver.onError = { (error: Error) in
+            presentToast(config: .failure(message: "Could not save image."))
+            print(error.localizedDescription)
+        }
+        
+        imageSaver.writeToPhotoAlbum(image: image)
     }
     
     private func exportAsPDF() {
@@ -201,8 +211,9 @@ struct ContentView: View {
             context.beginPage(withBounds: CGRect(origin: .zero, size: viewSize), pageInfo: [:])
             hostingController.view.layer.render(in: context.cgContext)
         }
-        share(items: [pdfData])
-        presentToast(config: .success(message: "PDF Ready!"))
+        share(items: [pdfData], onComplete: {
+            presentToast(config: .success(message: "PDF Exported!"))
+        })
     }
     
     private func exportAsHTML() {
@@ -211,29 +222,41 @@ struct ContentView: View {
         let css = isDarkMode ? darkThemeCSS : lightThemeCSS
         let html = htmlTemplate(body: htmlBody, css: css)
         
-        saveAndShare(text: html, fileName: "export.html", successMessage: "HTML Ready!")
+        saveAndShare(text: html, fileName: "export.html", successMessage: "HTML Exported!")
     }
     
     private func exportAsMarkdown() {
-        saveAndShare(text: markdownText, fileName: "export.md", successMessage: "Markdown Ready!")
+        saveAndShare(text: markdownText, fileName: "export.md", successMessage: "Markdown Exported!")
     }
 
     private func saveAndShare(text: String, fileName: String, successMessage: String) {
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         do {
             try text.write(to: tempURL, atomically: true, encoding: .utf8)
-            share(items: [tempURL])
-            presentToast(config: .success(message: successMessage))
+            share(items: [tempURL], onComplete: {
+                presentToast(config: .success(message: successMessage))
+            })
         } catch {
             presentToast(config: .failure(message: "Failed to save file."))
         }
     }
 
-    private func share(items: [Any]) {
-        guard let source = UIApplication.shared.windows.first?.rootViewController else {
+    private func share(items: [Any], onComplete: (() -> Void)? = nil) {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let source = scene.windows.first?.rootViewController else {
             return
         }
         let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        
+        activityVC.completionWithItemsHandler = { _, completed, _, error in
+            if completed {
+                self.addToHistory(self.markdownText)
+                onComplete?()
+            } else if let error = error {
+                self.presentToast(config: .failure(message: "Export failed."))
+                print("Share failed: \(error.localizedDescription)")
+            }
+        }
         
         // For iPad
         if let popover = activityVC.popoverPresentationController {
@@ -243,7 +266,6 @@ struct ContentView: View {
         }
         
         source.present(activityVC, animated: true)
-        addToHistory(markdownText)
     }
 
     // MARK: - History & Loading
