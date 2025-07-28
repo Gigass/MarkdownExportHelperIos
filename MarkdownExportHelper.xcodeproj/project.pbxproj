@@ -6,34 +6,27 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		1AE190192E332C8D0009FE64 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1AE190182E332C8D0009FE64 /* MarkdownUI */; };
-		1AE1901B2E332C9C0009FE64 /* ToastUI in Frameworks */ = {isa = PBXBuildFile; productRef = 1AE1901A2E332C9C0009FE64 /* ToastUI */; };
-		1AE1901D2E332CAD0009FE64 /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = 1AE1901C2E332CAD0009FE64 /* Ink */; };
-		1AE1901F2E332CAD0009FE64 /* ink-cli in Frameworks */ = {isa = PBXBuildFile; productRef = 1AE1901E2E332CAD0009FE64 /* ink-cli */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
-		1AE18FFC2E332A660009FE64 /* PBXContainerItemProxy */ = {
+		1AC768802E3338D2003E1173 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1A943B3F2E3321FE00E80034 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 1AE18FED2E332A640009FE64;
+			remoteGlobalIDString = 1AC768722E3338D0003E1173;
 			remoteInfo = MarkdownExportHelper;
 		};
-		1AE190062E332A660009FE64 /* PBXContainerItemProxy */ = {
+		1AC7688A2E3338D2003E1173 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1A943B3F2E3321FE00E80034 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 1AE18FED2E332A640009FE64;
+			remoteGlobalIDString = 1AC768722E3338D0003E1173;
 			remoteInfo = MarkdownExportHelper;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		1AE18FEE2E332A640009FE64 /* MarkdownExportHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownExportHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		1AE18FFB2E332A660009FE64 /* MarkdownExportHelperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1AE190052E332A660009FE64 /* MarkdownExportHelperUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1AC768732E3338D0003E1173 /* MarkdownExportHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownExportHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1AC7687F2E3338D2003E1173 /* MarkdownExportHelperTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1AC768892E3338D2003E1173 /* MarkdownExportHelperUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,43 +45,24 @@
 			path = MarkdownExportHelperUITests;
 			sourceTree = "<group>";
 		};
-		1AE18FEF2E332A640009FE64 /* MarkdownExportHelper */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MarkdownExportHelper;
-			sourceTree = "<group>";
-		};
-		1AE18FFE2E332A660009FE64 /* MarkdownExportHelperTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MarkdownExportHelperTests;
-			sourceTree = "<group>";
-		};
-		1AE190082E332A660009FE64 /* MarkdownExportHelperUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MarkdownExportHelperUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		1AE18FEB2E332A640009FE64 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				1AE1901D2E332CAD0009FE64 /* Ink in Frameworks */,
-				1AE1901B2E332C9C0009FE64 /* ToastUI in Frameworks */,
-				1AE1901F2E332CAD0009FE64 /* ink-cli in Frameworks */,
-				1AE190192E332C8D0009FE64 /* MarkdownUI in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		1AE18FF82E332A660009FE64 /* Frameworks */ = {
+		1AC768702E3338D0003E1173 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1AE190022E332A660009FE64 /* Frameworks */ = {
+		1AC7687C2E3338D2003E1173 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1AC768862E3338D2003E1173 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -104,9 +78,6 @@
 				1A943B492E3321FE00E80034 /* MarkdownExportHelper */,
 				1A943B582E33220000E80034 /* MarkdownExportHelperTests */,
 				1A943B622E33220000E80034 /* MarkdownExportHelperUITests */,
-				1AE18FEF2E332A640009FE64 /* MarkdownExportHelper */,
-				1AE18FFE2E332A660009FE64 /* MarkdownExportHelperTests */,
-				1AE190082E332A660009FE64 /* MarkdownExportHelperUITests */,
 				1A943B482E3321FE00E80034 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -114,9 +85,9 @@
 		1A943B482E3321FE00E80034 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1AE18FEE2E332A640009FE64 /* MarkdownExportHelper.app */,
-				1AE18FFB2E332A660009FE64 /* MarkdownExportHelperTests.xctest */,
-				1AE190052E332A660009FE64 /* MarkdownExportHelperUITests.xctest */,
+				1AC768732E3338D0003E1173 /* MarkdownExportHelper.app */,
+				1AC7687F2E3338D2003E1173 /* MarkdownExportHelperTests.xctest */,
+				1AC768892E3338D2003E1173 /* MarkdownExportHelperUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -124,76 +95,63 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1AE18FED2E332A640009FE64 /* MarkdownExportHelper */ = {
+		1AC768722E3338D0003E1173 /* MarkdownExportHelper */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1AE1900D2E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelper" */;
+			buildConfigurationList = 1AC768912E3338D2003E1173 /* Build configuration list for PBXNativeTarget "MarkdownExportHelper" */;
 			buildPhases = (
-				1AE18FEA2E332A640009FE64 /* Sources */,
-				1AE18FEB2E332A640009FE64 /* Frameworks */,
-				1AE18FEC2E332A640009FE64 /* Resources */,
+				1AC7686F2E3338D0003E1173 /* Sources */,
+				1AC768702E3338D0003E1173 /* Frameworks */,
+				1AC768712E3338D0003E1173 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				1AE18FEF2E332A640009FE64 /* MarkdownExportHelper */,
 			);
 			name = MarkdownExportHelper;
 			packageProductDependencies = (
-				1AE190182E332C8D0009FE64 /* MarkdownUI */,
-				1AE1901A2E332C9C0009FE64 /* ToastUI */,
-				1AE1901C2E332CAD0009FE64 /* Ink */,
-				1AE1901E2E332CAD0009FE64 /* ink-cli */,
 			);
 			productName = MarkdownExportHelper;
-			productReference = 1AE18FEE2E332A640009FE64 /* MarkdownExportHelper.app */;
+			productReference = 1AC768732E3338D0003E1173 /* MarkdownExportHelper.app */;
 			productType = "com.apple.product-type.application";
 		};
-		1AE18FFA2E332A660009FE64 /* MarkdownExportHelperTests */ = {
+		1AC7687E2E3338D2003E1173 /* MarkdownExportHelperTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1AE190102E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperTests" */;
+			buildConfigurationList = 1AC768942E3338D2003E1173 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperTests" */;
 			buildPhases = (
-				1AE18FF72E332A660009FE64 /* Sources */,
-				1AE18FF82E332A660009FE64 /* Frameworks */,
-				1AE18FF92E332A660009FE64 /* Resources */,
+				1AC7687B2E3338D2003E1173 /* Sources */,
+				1AC7687C2E3338D2003E1173 /* Frameworks */,
+				1AC7687D2E3338D2003E1173 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				1AE18FFD2E332A660009FE64 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				1AE18FFE2E332A660009FE64 /* MarkdownExportHelperTests */,
+				1AC768812E3338D2003E1173 /* PBXTargetDependency */,
 			);
 			name = MarkdownExportHelperTests;
 			packageProductDependencies = (
 			);
 			productName = MarkdownExportHelperTests;
-			productReference = 1AE18FFB2E332A660009FE64 /* MarkdownExportHelperTests.xctest */;
+			productReference = 1AC7687F2E3338D2003E1173 /* MarkdownExportHelperTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		1AE190042E332A660009FE64 /* MarkdownExportHelperUITests */ = {
+		1AC768882E3338D2003E1173 /* MarkdownExportHelperUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1AE190132E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperUITests" */;
+			buildConfigurationList = 1AC768972E3338D2003E1173 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperUITests" */;
 			buildPhases = (
-				1AE190012E332A660009FE64 /* Sources */,
-				1AE190022E332A660009FE64 /* Frameworks */,
-				1AE190032E332A660009FE64 /* Resources */,
+				1AC768852E3338D2003E1173 /* Sources */,
+				1AC768862E3338D2003E1173 /* Frameworks */,
+				1AC768872E3338D2003E1173 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				1AE190072E332A660009FE64 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				1AE190082E332A660009FE64 /* MarkdownExportHelperUITests */,
+				1AC7688B2E3338D2003E1173 /* PBXTargetDependency */,
 			);
 			name = MarkdownExportHelperUITests;
 			packageProductDependencies = (
 			);
 			productName = MarkdownExportHelperUITests;
-			productReference = 1AE190052E332A660009FE64 /* MarkdownExportHelperUITests.xctest */;
+			productReference = 1AC768892E3338D2003E1173 /* MarkdownExportHelperUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -206,16 +164,16 @@
 				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
-					1AE18FED2E332A640009FE64 = {
+					1AC768722E3338D0003E1173 = {
 						CreatedOnToolsVersion = 16.4;
 					};
-					1AE18FFA2E332A660009FE64 = {
+					1AC7687E2E3338D2003E1173 = {
 						CreatedOnToolsVersion = 16.4;
-						TestTargetID = 1AE18FED2E332A640009FE64;
+						TestTargetID = 1AC768722E3338D0003E1173;
 					};
-					1AE190042E332A660009FE64 = {
+					1AC768882E3338D2003E1173 = {
 						CreatedOnToolsVersion = 16.4;
-						TestTargetID = 1AE18FED2E332A640009FE64;
+						TestTargetID = 1AC768722E3338D0003E1173;
 					};
 				};
 			};
@@ -239,29 +197,29 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1AE18FED2E332A640009FE64 /* MarkdownExportHelper */,
-				1AE18FFA2E332A660009FE64 /* MarkdownExportHelperTests */,
-				1AE190042E332A660009FE64 /* MarkdownExportHelperUITests */,
+				1AC768722E3338D0003E1173 /* MarkdownExportHelper */,
+				1AC7687E2E3338D2003E1173 /* MarkdownExportHelperTests */,
+				1AC768882E3338D2003E1173 /* MarkdownExportHelperUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		1AE18FEC2E332A640009FE64 /* Resources */ = {
+		1AC768712E3338D0003E1173 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1AE18FF92E332A660009FE64 /* Resources */ = {
+		1AC7687D2E3338D2003E1173 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1AE190032E332A660009FE64 /* Resources */ = {
+		1AC768872E3338D2003E1173 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -271,21 +229,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		1AE18FEA2E332A640009FE64 /* Sources */ = {
+		1AC7686F2E3338D0003E1173 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1AE18FF72E332A660009FE64 /* Sources */ = {
+		1AC7687B2E3338D2003E1173 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		1AE190012E332A660009FE64 /* Sources */ = {
+		1AC768852E3338D2003E1173 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -295,15 +253,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		1AE18FFD2E332A660009FE64 /* PBXTargetDependency */ = {
+		1AC768812E3338D2003E1173 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1AE18FED2E332A640009FE64 /* MarkdownExportHelper */;
-			targetProxy = 1AE18FFC2E332A660009FE64 /* PBXContainerItemProxy */;
+			target = 1AC768722E3338D0003E1173 /* MarkdownExportHelper */;
+			targetProxy = 1AC768802E3338D2003E1173 /* PBXContainerItemProxy */;
 		};
-		1AE190072E332A660009FE64 /* PBXTargetDependency */ = {
+		1AC7688B2E3338D2003E1173 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1AE18FED2E332A640009FE64 /* MarkdownExportHelper */;
-			targetProxy = 1AE190062E332A660009FE64 /* PBXContainerItemProxy */;
+			target = 1AC768722E3338D0003E1173 /* MarkdownExportHelper */;
+			targetProxy = 1AC7688A2E3338D2003E1173 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -426,93 +384,78 @@
 			};
 			name = Release;
 		};
-		1AE1900E2E332A660009FE64 /* Debug */ = {
+		1AC768922E3338D2003E1173 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MarkdownExportHelper/MarkdownExportHelper.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D656GS6DUT;
-				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MarkdownExportHelper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MarkDownExportHelper;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gigass.MarkdownExportHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
+				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
 		};
-		1AE1900F2E332A660009FE64 /* Release */ = {
+		1AC768932E3338D2003E1173 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = MarkdownExportHelper/MarkdownExportHelper.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D656GS6DUT;
-				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = MarkdownExportHelper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = MarkDownExportHelper;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
-				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
-				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gigass.MarkdownExportHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
+				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				XROS_DEPLOYMENT_TARGET = 2.5;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		1AE190112E332A660009FE64 /* Debug */ = {
+		1AC768952E3338D2003E1173 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -521,21 +464,18 @@
 				DEVELOPMENT_TEAM = D656GS6DUT;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gigass.MarkdownExportHelperTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MarkdownExportHelper.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownExportHelper";
-				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
 		};
-		1AE190122E332A660009FE64 /* Release */ = {
+		1AC768962E3338D2003E1173 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -544,61 +484,56 @@
 				DEVELOPMENT_TEAM = D656GS6DUT;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gigass.MarkdownExportHelperTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MarkdownExportHelper.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownExportHelper";
-				XROS_DEPLOYMENT_TARGET = 2.5;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
-		1AE190142E332A660009FE64 /* Debug */ = {
+		1AC768982E3338D2003E1173 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D656GS6DUT;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "打开相册";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gigass.MarkdownExportHelperUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = MarkdownExportHelper;
-				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
 		};
-		1AE190152E332A660009FE64 /* Release */ = {
+		1AC768992E3338D2003E1173 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = D656GS6DUT;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "打开相册";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
-				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.gigass.MarkdownExportHelperUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = MarkdownExportHelper;
-				XROS_DEPLOYMENT_TARGET = 2.5;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -614,29 +549,29 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1AE1900D2E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelper" */ = {
+		1AC768912E3338D2003E1173 /* Build configuration list for PBXNativeTarget "MarkdownExportHelper" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1AE1900E2E332A660009FE64 /* Debug */,
-				1AE1900F2E332A660009FE64 /* Release */,
+				1AC768922E3338D2003E1173 /* Debug */,
+				1AC768932E3338D2003E1173 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1AE190102E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperTests" */ = {
+		1AC768942E3338D2003E1173 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1AE190112E332A660009FE64 /* Debug */,
-				1AE190122E332A660009FE64 /* Release */,
+				1AC768952E3338D2003E1173 /* Debug */,
+				1AC768962E3338D2003E1173 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1AE190132E332A660009FE64 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperUITests" */ = {
+		1AC768972E3338D2003E1173 /* Build configuration list for PBXNativeTarget "MarkdownExportHelperUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				1AE190142E332A660009FE64 /* Debug */,
-				1AE190152E332A660009FE64 /* Release */,
+				1AC768982E3338D2003E1173 /* Debug */,
+				1AC768992E3338D2003E1173 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -677,29 +612,6 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		1AE190182E332C8D0009FE64 /* MarkdownUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1A943B822E33258400E80034 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
-			productName = MarkdownUI;
-		};
-		1AE1901A2E332C9C0009FE64 /* ToastUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1AE18FE92E3327AF0009FE64 /* XCRemoteSwiftPackageReference "ToastUI" */;
-			productName = ToastUI;
-		};
-		1AE1901C2E332CAD0009FE64 /* Ink */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1A943B832E33259400E80034 /* XCRemoteSwiftPackageReference "ink" */;
-			productName = Ink;
-		};
-		1AE1901E2E332CAD0009FE64 /* ink-cli */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 1A943B832E33259400E80034 /* XCRemoteSwiftPackageReference "ink" */;
-			productName = "ink-cli";
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1A943B3F2E3321FE00E80034 /* Project object */;
 }
