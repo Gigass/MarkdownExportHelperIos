@@ -31,6 +31,7 @@ class SimpleMarkdownViewModel: ObservableObject {
     @Published var showToast = false
     @Published var toastMessage = ""
     @Published var history: [HistoryItem] = []
+    @Published var isExportingImage = false
     
     private let maxHistoryItems = 20
     private let userDefaults = UserDefaults.standard
@@ -87,6 +88,53 @@ class SimpleMarkdownViewModel: ObservableObject {
         userDefaults.set(markdownText, forKey: lastContentKey)
     }
     
+    func exportAsImage(completion: @escaping (UIImage?) -> Void) {
+        isExportingImage = true
+        
+        DispatchQueue.main.async {
+            let view = MarkdownPreviewView(content: self.markdownText)
+                .padding(32)
+                .background(Color(.systemBackground))
+            
+            let image = view.renderAsLongImage(width: 750)
+            
+            self.isExportingImage = false
+            completion(image)
+        }
+    }
+    
+    func shareImage(_ image: UIImage) {
+        let activityViewController = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        
+        // 获取当前显示的视图控制器
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            
+            var rootViewController = window.rootViewController
+            
+            // 找到最顶层的视图控制器
+            while let presentedViewController = rootViewController?.presentedViewController {
+                rootViewController = presentedViewController
+            }
+            
+            if let topViewController = rootViewController {
+                // iPad支持
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    activityViewController.popoverPresentationController?.sourceView = topViewController.view
+                    activityViewController.popoverPresentationController?.sourceRect = CGRect(
+                        x: topViewController.view.bounds.midX,
+                        y: topViewController.view.bounds.midY,
+                        width: 0,
+                        height: 0
+                    )
+                    activityViewController.popoverPresentationController?.permittedArrowDirections = []
+                }
+                
+                topViewController.present(activityViewController, animated: true, completion: nil)
+            }
+        }
+    }
+    
     private func loadHistory() {
         if let data = userDefaults.data(forKey: historyKey),
            let decodedHistory = try? JSONDecoder().decode([HistoryItem].self, from: data) {
@@ -132,23 +180,302 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func exportAsPNG() {
-        showToast(message: "PNG 导出功能开发中...")
+        exportAsImage { image in
+            guard let image = image else {
+                self.showToast(message: "图片生成失败")
+                return
+            }
+            
+            let imageSaver = ImageSaver()
+            imageSaver.onSuccess = {
+                self.showToast(message: "已保存到相册")
+            }
+            imageSaver.onError = { error in
+                self.showToast(message: "保存失败: \(error.localizedDescription)")
+            }
+            imageSaver.writeToPhotoAlbum(image: image)
+        }
     }
     
     func exportAsPDF() {
-        showToast(message: "PDF 导出功能开发中...")
+        isExportingImage = true
+        
+        DispatchQueue.main.async {
+            let view = MarkdownPreviewView(content: self.markdownText)
+                .padding(32)
+                .background(Color(.systemBackground))
+            
+            guard let pdfData = view.renderAsPDF() else {
+                self.isExportingImage = false
+                self.showToast(message: "PDF 生成失败")
+                return
+            }
+            
+            self.isExportingImage = false
+            self.savePDFToFiles(data: pdfData)
+        }
+    }
+    
+    private func savePDFToFiles(data: Data) {
+        let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).pdf"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try data.write(to: tempURL)
+            presentActivityViewController(with: [tempURL])
+            showToast(message: "PDF 已生成")
+        } catch {
+            showToast(message: "PDF 保存失败: \(error.localizedDescription)")
+        }
+    }
+    
+    private func presentActivityViewController(with items: [Any]) {
+        let activityViewController = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            
+            var rootViewController = window.rootViewController
+            
+            // 找到最顶层的视图控制器
+            while let presentedViewController = rootViewController?.presentedViewController {
+                rootViewController = presentedViewController
+            }
+            
+            if let topViewController = rootViewController {
+                // iPad支持
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    activityViewController.popoverPresentationController?.sourceView = topViewController.view
+                    activityViewController.popoverPresentationController?.sourceRect = CGRect(
+                        x: topViewController.view.bounds.midX,
+                        y: topViewController.view.bounds.midY,
+                        width: 0,
+                        height: 0
+                    )
+                    activityViewController.popoverPresentationController?.permittedArrowDirections = []
+                }
+                
+                topViewController.present(activityViewController, animated: true, completion: nil)
+            }
+        }
     }
     
     func exportAsHTML() {
-        showToast(message: "HTML 导出功能开发中...")
+        let htmlContent = convertMarkdownToHTML(markdownText)
+        let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).html"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try htmlContent.write(to: tempURL, atomically: true, encoding: .utf8)
+            presentActivityViewController(with: [tempURL])
+            showToast(message: "HTML 文件已生成")
+        } catch {
+            showToast(message: "HTML 保存失败: \(error.localizedDescription)")
+        }
+    }
+    
+    private func convertMarkdownToHTML(_ markdown: String) -> String {
+        var html = markdown
+        
+        // 替换标题
+        html = html.replacingOccurrences(of: "### (.+)", with: "<h3>$1</h3>", options: .regularExpression)
+        html = html.replacingOccurrences(of: "## (.+)", with: "<h2>$1</h2>", options: .regularExpression)
+        html = html.replacingOccurrences(of: "# (.+)", with: "<h1>$1</h1>", options: .regularExpression)
+        
+        // 替换粗体和斜体
+        html = html.replacingOccurrences(of: "\\*\\*(.+?)\\*\\*", with: "<strong>$1</strong>", options: .regularExpression)
+        html = html.replacingOccurrences(of: "\\*(.+?)\\*", with: "<em>$1</em>", options: .regularExpression)
+        
+        // 替换行内代码
+        html = html.replacingOccurrences(of: "`(.+?)`", with: "<code>$1</code>", options: .regularExpression)
+        
+        // 替换列表项
+        html = html.replacingOccurrences(of: "^- (.+)", with: "<li>$1</li>", options: .regularExpression)
+        html = html.replacingOccurrences(of: "^\\* (.+)", with: "<li>$1</li>", options: .regularExpression)
+        
+        // 替换引用
+        html = html.replacingOccurrences(of: "^> (.+)", with: "<blockquote>$1</blockquote>", options: .regularExpression)
+        
+        // 处理段落
+        let lines = html.components(separatedBy: .newlines)
+        var processedLines: [String] = []
+        var inList = false
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            if trimmedLine.isEmpty {
+                if inList {
+                    processedLines.append("</ul>")
+                    inList = false
+                }
+                processedLines.append("<br>")
+            } else if trimmedLine.hasPrefix("<li>") {
+                if !inList {
+                    processedLines.append("<ul>")
+                    inList = true
+                }
+                processedLines.append(trimmedLine)
+            } else {
+                if inList {
+                    processedLines.append("</ul>")
+                    inList = false
+                }
+                
+                if !trimmedLine.hasPrefix("<h") && !trimmedLine.hasPrefix("<blockquote>") {
+                    processedLines.append("<p>\(trimmedLine)</p>")
+                } else {
+                    processedLines.append(trimmedLine)
+                }
+            }
+        }
+        
+        if inList {
+            processedLines.append("</ul>")
+        }
+        
+        let bodyContent = processedLines.joined(separator: "\n")
+        
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Markdown Export</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    line-height: 1.6;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    color: #333;
+                }
+                h1, h2, h3 {
+                    color: #2c3e50;
+                    margin-top: 24px;
+                    margin-bottom: 16px;
+                }
+                h1 {
+                    font-size: 2em;
+                    border-bottom: 2px solid #eee;
+                    padding-bottom: 8px;
+                }
+                h2 {
+                    font-size: 1.5em;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 4px;
+                }
+                h3 {
+                    font-size: 1.2em;
+                }
+                code {
+                    background-color: #f4f4f4;
+                    padding: 2px 4px;
+                    border-radius: 3px;
+                    font-family: Monaco, 'Courier New', monospace;
+                }
+                blockquote {
+                    border-left: 4px solid #ddd;
+                    margin: 0;
+                    padding-left: 16px;
+                    color: #666;
+                    font-style: italic;
+                }
+                ul {
+                    padding-left: 20px;
+                }
+                li {
+                    margin-bottom: 4px;
+                }
+                p {
+                    margin-bottom: 16px;
+                }
+            </style>
+        </head>
+        <body>
+        \(bodyContent)
+        </body>
+        </html>
+        """
     }
     
     func exportAsMarkdown() {
-        showToast(message: "Markdown 导出功能开发中...")
+        let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).md"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try markdownText.write(to: tempURL, atomically: true, encoding: .utf8)
+            presentActivityViewController(with: [tempURL])
+            showToast(message: "Markdown 文件已生成")
+        } catch {
+            showToast(message: "Markdown 文件保存失败: \(error.localizedDescription)")
+        }
     }
     
     func exportAsWord() {
-        showToast(message: "Word 导出功能开发中...")
+        let rtfContent = convertMarkdownToRTF(markdownText)
+        let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).rtf"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try rtfContent.write(to: tempURL, atomically: true, encoding: .utf8)
+            presentActivityViewController(with: [tempURL])
+            showToast(message: "Word 文档已生成")
+        } catch {
+            showToast(message: "Word 文档保存失败: \(error.localizedDescription)")
+        }
+    }
+    
+    private func convertMarkdownToRTF(_ markdown: String) -> String {
+        let rtf = markdown
+        
+        // RTF header
+        var rtfContent = "{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}{\\f1 Courier New;}}"
+        rtfContent += "{\\colortbl;\\red0\\green0\\blue0;\\red128\\green128\\blue128;}"
+        
+        let lines = rtf.components(separatedBy: .newlines)
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            if trimmedLine.isEmpty {
+                rtfContent += "\\par "
+                continue
+            }
+            
+            var processedLine = trimmedLine
+            
+            // 处理标题
+            if processedLine.hasPrefix("### ") {
+                processedLine = String(processedLine.dropFirst(4))
+                rtfContent += "\\f0\\fs24\\b \(processedLine)\\b0\\par "
+            } else if processedLine.hasPrefix("## ") {
+                processedLine = String(processedLine.dropFirst(3))
+                rtfContent += "\\f0\\fs28\\b \(processedLine)\\b0\\par "
+            } else if processedLine.hasPrefix("# ") {
+                processedLine = String(processedLine.dropFirst(2))
+                rtfContent += "\\f0\\fs32\\b \(processedLine)\\b0\\par "
+            } else if processedLine.hasPrefix("- ") || processedLine.hasPrefix("* ") {
+                processedLine = String(processedLine.dropFirst(2))
+                rtfContent += "\\f0\\fs20 \\bullet \(processedLine)\\par "
+            } else if processedLine.hasPrefix("> ") {
+                processedLine = String(processedLine.dropFirst(2))
+                rtfContent += "\\f0\\fs20\\i \(processedLine)\\i0\\par "
+            } else {
+                // 处理粗体和斜体
+                processedLine = processedLine.replacingOccurrences(of: "**(.+?)**", with: "\\\\b $1\\\\b0", options: .regularExpression)
+                processedLine = processedLine.replacingOccurrences(of: "*(.+?)*", with: "\\\\i $1\\\\i0", options: .regularExpression)
+                processedLine = processedLine.replacingOccurrences(of: "`(.+?)`", with: "\\\\f1 $1\\\\f0", options: .regularExpression)
+                
+                rtfContent += "\\f0\\fs20 \(processedLine)\\par "
+            }
+        }
+        
+        rtfContent += "}"
+        
+        return rtfContent
     }
     
     private func showToast(message: String) {
@@ -341,6 +668,7 @@ struct ContentView: View {
     @State private var showingExportMenu = false
     @State private var showingHistory = false
     @State private var selectedTab = 0
+    @State private var showingImageExportOptions = false
     
     var body: some View {
         NavigationView {
@@ -391,16 +719,43 @@ struct ContentView: View {
                         
                         Spacer(minLength: 0)
                     }
+                    
+                    if viewModel.isExportingImage {
+                        VStack {
+                            ProgressView("正在生成图片...")
+                                .padding()
+                                .background(Color(.systemGray6))
+                                .cornerRadius(10)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.black.opacity(0.2))
+                        .edgesIgnoringSafeArea(.all)
+                    }
                 }
             }
             .navigationBarHidden(true)
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .sheet(isPresented: $showingExportMenu) {
-            ModernExportSheet(viewModel: viewModel)
+            ModernExportSheet(viewModel: viewModel, showingImageExportOptions: $showingImageExportOptions)
         }
         .sheet(isPresented: $showingHistory) {
             HistoryView(viewModel: viewModel)
+        }
+        .confirmationDialog("导出长图", isPresented: $showingImageExportOptions, titleVisibility: .visible) {
+            Button("保存到相册") {
+                viewModel.exportAsPNG()
+            }
+            Button("分享") {
+                viewModel.exportAsImage { image in
+                    if let image = image {
+                        viewModel.shareImage(image)
+                    }
+                }
+            }
+            Button("取消", role: .cancel) { }
+        } message: {
+            Text("请选择操作")
         }
         .overlay(
             Group {
@@ -694,6 +1049,7 @@ struct SmallActionButton: View {
 struct ModernExportSheet: View {
     let viewModel: SimpleMarkdownViewModel
     @Environment(\.presentationMode) var presentationMode
+    @Binding var showingImageExportOptions: Bool
     
     var body: some View {
         NavigationView {
@@ -729,8 +1085,10 @@ struct ModernExportSheet: View {
                         subtitle: "PNG 格式",
                         color: .green,
                         action: {
-                            viewModel.exportAsPNG()
                             presentationMode.wrappedValue.dismiss()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                showingImageExportOptions = true
+                            }
                         }
                     )
                     

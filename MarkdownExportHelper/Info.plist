@@ -12,6 +12,8 @@
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>我们需要访问您的相册来保存导出的图片。</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>
