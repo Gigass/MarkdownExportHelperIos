@@ -834,7 +834,6 @@ struct ContentView: View {
     @State private var showingHistory = false
     @State private var selectedTab = 0
     @State private var showingImageExportOptions = false
-    @State private var isToolbarExpanded = false
     @State private var showingProjectInfo = false
     @State private var scrollToTop = false
     @State private var editorScrollTrigger = UUID()
@@ -1000,95 +999,65 @@ struct ContentView: View {
     
     
     private var modernToolbar: some View {
-        ZStack {
-            // 中心标题 - 使用ZStack确保真正居中
-            Text("Markdown Editor")
-                .font(.system(size: isIPad ? 28 : 22, weight: .semibold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: isDarkMode ? [.white, .gray] : [.primary, .secondary],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+        HStack {
+            // 左侧项目信息按钮
+            ModernButton(
+                icon: "info.circle.fill",
+                action: { 
+                    showingProjectInfo.toggle()
+                },
+                isDarkMode: isDarkMode,
+                isIPad: isIPad
+            )
             
-            // 右侧按钮组
-            HStack {
-                Spacer()
-                
-                HStack(spacing: isIPad ? 12 : 8) {
-                    // 展开的功能按钮组
-                    if isToolbarExpanded {
-                        HStack(spacing: isIPad ? 12 : 8) {
-                            ModernButton(
-                                icon: "info.circle.fill",
-                                action: { 
-                                    showingProjectInfo.toggle()
-                                },
-                                isDarkMode: isDarkMode,
-                                isIPad: isIPad
-                            )
-                            .transition(.asymmetric(
-                                insertion: .scale.combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.15)),
-                                removal: .scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8))
-                            ))
-                            
-                            ModernButton(
-                                icon: "clock.fill",
-                                action: { 
-                                    showingHistory.toggle()
-                                },
-                                isDarkMode: isDarkMode,
-                                isIPad: isIPad
-                            )
-                            .transition(.asymmetric(
-                                insertion: .scale.combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.1)),
-                                removal: .scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8))
-                            ))
-                            
-                            ModernButton(
-                                icon: "square.and.arrow.up.fill",
-                                action: { 
-                                    showingExportMenu.toggle()
-                                },
-                                isDarkMode: isDarkMode,
-                                isIPad: isIPad
-                            )
-                            .transition(.asymmetric(
-                                insertion: .scale.combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.05)),
-                                removal: .scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8))
-                            ))
-                            
-                            ModernButton(
-                                icon: isDarkMode ? "sun.max.fill" : "moon.fill",
-                                action: { 
-                                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                        isDarkMode.toggle()
-                                        UserDefaults.standard.set(isDarkMode, forKey: "isDarkMode")
-                                    }
-                                },
-                                isDarkMode: isDarkMode,
-                                isIPad: isIPad
-                            )
-                            .transition(.asymmetric(
-                                insertion: .scale.combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.8)),
-                                removal: .scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8))
-                            ))
-                        }
-                    }
-                    
-                    // 主工具按钮 - 始终显示
-                    ModernButton(
-                        icon: isToolbarExpanded ? "xmark" : "ellipsis",
-                        action: { 
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                                isToolbarExpanded.toggle()
-                            }
-                        },
-                        isDarkMode: isDarkMode,
-                        isIPad: isIPad
+            Spacer()
+            
+            // iPad中心标题
+            if isIPad {
+                Text("Markdown Export Helper")
+                    .font(.system(size: 28, weight: .semibold, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: isDarkMode ? [.white, .gray] : [.primary, .secondary],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
-                }
+                
+                Spacer()
+            }
+            
+            // 右侧功能按钮组
+            HStack(spacing: isIPad ? 16 : 12) {
+                ModernButton(
+                    icon: "clock.fill",
+                    action: { 
+                        showingHistory.toggle()
+                    },
+                    isDarkMode: isDarkMode,
+                    isIPad: isIPad
+                )
+                
+                ModernButton(
+                    icon: "square.and.arrow.up.fill",
+                    action: { 
+                        showingExportMenu.toggle()
+                    },
+                    isDarkMode: isDarkMode,
+                    isIPad: isIPad
+                )
+                
+                ModernButton(
+                    icon: isDarkMode ? "sun.max.fill" : "moon.fill",
+                    action: { 
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            isDarkMode.toggle()
+                            UserDefaults.standard.set(isDarkMode, forKey: "isDarkMode")
+                        }
+                    },
+                    isDarkMode: isDarkMode,
+                    isIPad: isIPad
+                )
             }
         }
     }
