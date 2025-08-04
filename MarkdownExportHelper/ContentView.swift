@@ -23,17 +23,13 @@ struct HistoryItem: Identifiable, Codable {
 }
 
 class SimpleMarkdownViewModel: ObservableObject {
-    @Published var markdownText: String = "" {
-        didSet {
-            saveToHistory()
-        }
-    }
+    @Published var markdownText: String = ""
     @Published var showToast = false
     @Published var toastMessage = ""
     @Published var history: [HistoryItem] = []
     @Published var isExportingImage = false
     
-    private let maxHistoryItems = 20
+    private let maxHistoryItems = 50
     private let userDefaults = UserDefaults.standard
     private let historyKey = "MarkdownHistory"
     private let lastContentKey = "LastMarkdownContent"
@@ -71,13 +67,16 @@ class SimpleMarkdownViewModel: ObservableObject {
     private func saveToHistory() {
         guard !markdownText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
-        // Don't save if it's the same as the last item
-        if let lastItem = history.first, lastItem.content == markdownText {
-            return
+        // Check if content already exists in history
+        if let existingIndex = history.firstIndex(where: { $0.content == markdownText }) {
+            // Move existing item to front
+            let existingItem = history.remove(at: existingIndex)
+            history.insert(existingItem, at: 0)
+        } else {
+            // Add new item
+            let historyItem = HistoryItem(content: markdownText)
+            history.insert(historyItem, at: 0)
         }
-        
-        let historyItem = HistoryItem(content: markdownText)
-        history.insert(historyItem, at: 0)
         
         // Keep only the latest items
         if history.count > maxHistoryItems {
@@ -86,6 +85,11 @@ class SimpleMarkdownViewModel: ObservableObject {
         
         saveHistory()
         userDefaults.set(markdownText, forKey: lastContentKey)
+    }
+    
+    func saveToHistoryManually() {
+        saveToHistory()
+        showToast(message: "已保存到历史")
     }
     
     func exportAsImage(completion: @escaping (UIImage?) -> Void) {
@@ -186,6 +190,9 @@ class SimpleMarkdownViewModel: ObservableObject {
                 return
             }
             
+            // Save to history when exporting
+            self.saveToHistory()
+            
             let imageSaver = ImageSaver()
             imageSaver.onSuccess = {
                 self.showToast(message: "已保存到相册")
@@ -198,6 +205,9 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func exportAsPDF() {
+        // Save to history when exporting
+        saveToHistory()
+        
         isExportingImage = true
         
         DispatchQueue.main.async {
@@ -261,6 +271,9 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func exportAsHTML() {
+        // Save to history when exporting
+        saveToHistory()
+        
         let htmlContent = convertMarkdownToHTML(markdownText)
         let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).html"
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
@@ -402,6 +415,9 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func exportAsMarkdown() {
+        // Save to history when exporting
+        saveToHistory()
+        
         let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).md"
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         
@@ -415,6 +431,9 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func exportAsWord() {
+        // Save to history when exporting
+        saveToHistory()
+        
         let wordContent = convertMarkdownToWordHTML(markdownText)
         let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).doc"
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
@@ -813,38 +832,64 @@ struct ContentView: View {
     @State private var showingHistory = false
     @State private var selectedTab = 0
     @State private var showingImageExportOptions = false
+    @State private var isToolbarExpanded = false
+    
+    // iPad适配相关属性
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+    
+    private var shouldUseSideBySideLayout: Bool {
+        isIPad // iPad总是使用侧边布局
+    }
+    
+    private func cardSpacing(for geometry: GeometryProxy) -> CGFloat {
+        isIPad ? 24 : 12
+    }
+    
+    private func horizontalPadding(for geometry: GeometryProxy) -> CGFloat {
+        if isIPad {
+            return max(24, geometry.size.width * 0.05) // iPad使用更大的边距
+        }
+        return 16
+    }
+    
+    private func cardWidth(for geometry: GeometryProxy) -> CGFloat {
+        let padding = horizontalPadding(for: geometry)
+        let spacing = cardSpacing(for: geometry)
+        return (geometry.size.width - padding * 2 - spacing) * 0.5
+    }
     
     var body: some View {
         NavigationView {
-            GeometryReader { geometry in
-                ZStack {
-                    // Unified background
-                    Color(.systemGroupedBackground)
-                        .ignoresSafeArea()
-                    
+            ZStack {
+                // Unified background - 确保完全填满屏幕
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea(.all)
+                
+                GeometryReader { geometry in
                     VStack(spacing: 0) {
                         // Custom top toolbar - unified with background  
                         modernToolbar
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemGroupedBackground))
+                            .padding(.horizontal, horizontalPadding(for: geometry))
+                            .padding(.vertical, isIPad ? 12 : 8)
                         
-                        if geometry.size.width > geometry.size.height {
-                            // Landscape: Side by side with cards
-                            HStack(spacing: 12) {
+                        if shouldUseSideBySideLayout || geometry.size.width > geometry.size.height {
+                            // iPad或横屏：侧边布局
+                            HStack(spacing: cardSpacing(for: geometry)) {
                                 modernEditorCard
-                                    .frame(width: geometry.size.width * 0.5 - 26)
+                                    .frame(width: cardWidth(for: geometry))
                                 
                                 modernPreviewCard
-                                    .frame(width: geometry.size.width * 0.5 - 26)
+                                    .frame(width: cardWidth(for: geometry))
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, horizontalPadding(for: geometry))
                         } else {
-                            // Portrait: Custom tab view with cards
+                            // iPhone竖屏：标签页布局
                             VStack(spacing: 0) {
                                 // Custom tab selector - more compact
                                 modernTabSelector
-                                    .padding(.horizontal, 16)
+                                    .padding(.horizontal, horizontalPadding(for: geometry))
                                     .padding(.vertical, 8)
                                 
                                 // Content area - flexible height
@@ -857,28 +902,31 @@ struct ContentView: View {
                                 }
                                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                                 .animation(.easeInOut(duration: 0.3), value: selectedTab)
-                                .padding(.horizontal, 16)
+                                .padding(.horizontal, horizontalPadding(for: geometry))
                             }
                         }
                         
                         Spacer(minLength: 0)
                     }
                     
-                    if viewModel.isExportingImage {
-                        VStack {
-                            ProgressView("正在生成图片...")
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(10)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black.opacity(0.2))
-                        .edgesIgnoringSafeArea(.all)
+                }
+                
+                // Loading overlay - 移到外层确保全屏覆盖
+                if viewModel.isExportingImage {
+                    VStack {
+                        ProgressView("正在生成图片...")
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(10)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.2))
+                    .ignoresSafeArea(.all)
                 }
             }
             .navigationBarHidden(true)
         }
+        .navigationViewStyle(StackNavigationViewStyle()) // 强制使用堆栈样式，避免iPad分栏显示
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .sheet(isPresented: $showingExportMenu) {
             ModernExportSheet(viewModel: viewModel, showingImageExportOptions: $showingImageExportOptions)
@@ -917,9 +965,6 @@ struct ContentView: View {
         .onAppear {
             viewModel.loadContent()
         }
-        .onTapGesture {
-            hideKeyboard()
-        }
     }
     
     private func hideKeyboard() {
@@ -928,13 +973,10 @@ struct ContentView: View {
     
     
     private var modernToolbar: some View {
-        HStack {
-            // Empty space for balance
-            Spacer()
-            
-            // Center title with premium styling
+        ZStack {
+            // 中心标题 - 使用ZStack确保真正居中
             Text("Markdown Editor")
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                .font(.system(size: isIPad ? 28 : 22, weight: .semibold, design: .rounded))
                 .foregroundStyle(
                     LinearGradient(
                         colors: isDarkMode ? [.white, .gray] : [.primary, .secondary],
@@ -943,32 +985,70 @@ struct ContentView: View {
                     )
                 )
             
-            Spacer()
-            
-            // Action buttons with glassmorphism
-            HStack(spacing: 12) {
-                ModernButton(
-                    icon: "clock.fill",
-                    action: { showingHistory.toggle() },
-                    isDarkMode: isDarkMode
-                )
+            // 右侧按钮组
+            HStack {
+                Spacer()
                 
-                ModernButton(
-                    icon: "square.and.arrow.up.fill",
-                    action: { showingExportMenu.toggle() },
-                    isDarkMode: isDarkMode
-                )
-                
-                ModernButton(
-                    icon: isDarkMode ? "sun.max.fill" : "moon.fill",
-                    action: { 
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                            isDarkMode.toggle()
-                            UserDefaults.standard.set(isDarkMode, forKey: "isDarkMode")
+                HStack(spacing: isIPad ? 12 : 8) {
+                    // 展开的功能按钮组
+                    if isToolbarExpanded {
+                        HStack(spacing: isIPad ? 12 : 8) {
+                            ModernButton(
+                                icon: "clock.fill",
+                                action: { 
+                                    showingHistory.toggle()
+                                },
+                                isDarkMode: isDarkMode,
+                                isIPad: isIPad
+                            )
+                            .transition(.asymmetric(
+                                insertion: .scale.combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.1)),
+                                removal: .scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8))
+                            ))
+                            
+                            ModernButton(
+                                icon: "square.and.arrow.up.fill",
+                                action: { 
+                                    showingExportMenu.toggle()
+                                },
+                                isDarkMode: isDarkMode,
+                                isIPad: isIPad
+                            )
+                            .transition(.asymmetric(
+                                insertion: .scale.combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.05)),
+                                removal: .scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8))
+                            ))
+                            
+                            ModernButton(
+                                icon: isDarkMode ? "sun.max.fill" : "moon.fill",
+                                action: { 
+                                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                        isDarkMode.toggle()
+                                        UserDefaults.standard.set(isDarkMode, forKey: "isDarkMode")
+                                    }
+                                },
+                                isDarkMode: isDarkMode,
+                                isIPad: isIPad
+                            )
+                            .transition(.asymmetric(
+                                insertion: .scale.combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.8)),
+                                removal: .scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8))
+                            ))
                         }
-                    },
-                    isDarkMode: isDarkMode
-                )
+                    }
+                    
+                    // 主工具按钮 - 始终显示
+                    ModernButton(
+                        icon: isToolbarExpanded ? "xmark" : "ellipsis",
+                        action: { 
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                isToolbarExpanded.toggle()
+                            }
+                        },
+                        isDarkMode: isDarkMode,
+                        isIPad: isIPad
+                    )
+                }
             }
         }
     }
@@ -1036,23 +1116,33 @@ struct ContentView: View {
                 Spacer()
                 
                 // Compact action buttons
-                HStack(spacing: 6) {
+                HStack(spacing: isIPad ? 10 : 6) {
+                    SmallActionButton(
+                        icon: "square.and.arrow.down.fill",
+                        color: .green,
+                        action: { viewModel.saveToHistoryManually() },
+                        isIPad: isIPad
+                    )
+                    
                     SmallActionButton(
                         icon: "trash.fill",
                         color: .red,
-                        action: { viewModel.clearContent() }
+                        action: { viewModel.clearContent() },
+                        isIPad: isIPad
                     )
                     
                     SmallActionButton(
                         icon: "doc.on.clipboard.fill",
                         color: .blue,
-                        action: { viewModel.pasteFromClipboard() }
+                        action: { viewModel.pasteFromClipboard() },
+                        isIPad: isIPad
                     )
                     
                     SmallActionButton(
                         icon: "keyboard.chevron.compact.down",
                         color: .gray,
-                        action: { hideKeyboard() }
+                        action: { hideKeyboard() },
+                        isIPad: isIPad
                     )
                 }
             }
@@ -1062,24 +1152,24 @@ struct ContentView: View {
             
             // Text editor - simplified
             TextEditor(text: $viewModel.markdownText)
-                .font(.system(size: 15, design: .monospaced))
-                .padding(12)
+                .font(.system(size: isIPad ? 17 : 15, design: .monospaced))
+                .padding(isIPad ? 16 : 12)
                 .background(Color(.systemBackground))
                 .scrollContentBackground(.hidden)
                 .onTapGesture(count: 2) {
                     hideKeyboard()
                 }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: isIPad ? 20 : 16))
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: isIPad ? 20 : 16)
                 .fill(Color(.secondarySystemGroupedBackground))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: isIPad ? 20 : 16)
                         .stroke(Color.primary.opacity(0.06), lineWidth: 1)
                 )
         )
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.05), radius: isIPad ? 12 : 8, x: 0, y: isIPad ? 3 : 2)
     }
     
     private var modernPreviewCard: some View {
@@ -1120,21 +1210,21 @@ struct ContentView: View {
                     .padding(24)
                 } else {
                     MarkdownPreviewView(content: viewModel.markdownText)
-                        .padding(16)
+                        .padding(isIPad ? 20 : 16)
                 }
             }
             .background(Color(.systemBackground))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: isIPad ? 20 : 16))
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: isIPad ? 20 : 16)
                 .fill(Color(.secondarySystemGroupedBackground))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: isIPad ? 20 : 16)
                         .stroke(Color.primary.opacity(0.06), lineWidth: 1)
                 )
         )
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+        .shadow(color: .black.opacity(0.05), radius: isIPad ? 12 : 8, x: 0, y: isIPad ? 3 : 2)
     }
 }
 
@@ -1143,13 +1233,26 @@ struct ModernButton: View {
     let icon: String
     let action: () -> Void
     let isDarkMode: Bool
+    let isIPad: Bool
+    
+    private var buttonSize: CGFloat {
+        isIPad ? 48 : 40
+    }
+    
+    private var touchAreaSize: CGFloat {
+        isIPad ? 60 : 44 // 更大的触摸区域
+    }
+    
+    private var iconSize: CGFloat {
+        isIPad ? 20 : 16
+    }
     
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: iconSize, weight: .semibold))
                 .foregroundColor(.primary)
-                .frame(width: 40, height: 40)
+                .frame(width: buttonSize, height: buttonSize)
                 .background(
                     Circle()
                         .fill(.ultraThinMaterial)
@@ -1158,8 +1261,11 @@ struct ModernButton: View {
                                 .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                         )
                 )
-                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.1), radius: isIPad ? 10 : 8, x: 0, y: isIPad ? 5 : 4)
         }
+        .buttonStyle(PlainButtonStyle()) // 使用Plain样式确保响应
+        .frame(width: touchAreaSize, height: touchAreaSize) // 扩大触摸区域
+        .contentShape(Circle()) // 确保整个圆形区域都可以点击
         .scaleEffect(1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isDarkMode)
     }
@@ -1169,13 +1275,22 @@ struct SmallActionButton: View {
     let icon: String
     let color: Color
     let action: () -> Void
+    let isIPad: Bool
+    
+    private var buttonSize: CGFloat {
+        isIPad ? 34 : 28
+    }
+    
+    private var iconSize: CGFloat {
+        isIPad ? 14 : 12
+    }
     
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: iconSize, weight: .semibold))
                 .foregroundColor(color)
-                .frame(width: 28, height: 28)
+                .frame(width: buttonSize, height: buttonSize)
                 .background(
                     Circle()
                         .fill(color.opacity(0.12))
@@ -1185,6 +1300,8 @@ struct SmallActionButton: View {
                         )
                 )
         }
+        .buttonStyle(PlainButtonStyle()) // 确保响应
+        .contentShape(Circle()) // 确保整个圆形区域都可以点击
         .scaleEffect(1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: color)
     }
@@ -1194,6 +1311,10 @@ struct ModernExportSheet: View {
     let viewModel: SimpleMarkdownViewModel
     @Environment(\.presentationMode) var presentationMode
     @Binding var showingImageExportOptions: Bool
+    
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
     
     var body: some View {
         NavigationView {
@@ -1222,7 +1343,7 @@ struct ModernExportSheet: View {
                 .padding(.vertical, 32)
                 
                 // Export options
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 2), spacing: 16) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: isIPad ? 24 : 16), count: isIPad ? 3 : 2), spacing: isIPad ? 24 : 16) {
                     ExportOptionCard(
                         icon: "photo.fill",
                         title: "长图",
