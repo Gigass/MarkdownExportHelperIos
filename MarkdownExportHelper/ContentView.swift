@@ -152,9 +152,10 @@ class SimpleMarkdownViewModel: ObservableObject {
         }
     }
     
-    func restoreFromHistory(_ item: HistoryItem) {
+    func restoreFromHistory(_ item: HistoryItem, onComplete: (() -> Void)? = nil) {
         markdownText = item.content
         showToast(message: "已恢复历史内容")
+        onComplete?()
     }
     
     func deleteHistoryItem(_ item: HistoryItem) {
@@ -163,10 +164,11 @@ class SimpleMarkdownViewModel: ObservableObject {
         showToast(message: "已删除历史记录")
     }
     
-    func clearHistory() {
+    func clearHistory(onComplete: (() -> Void)? = nil) {
         history.removeAll()
         saveHistory()
         showToast(message: "已清空所有历史记录")
+        onComplete?()
     }
     
     func clearContent() {
@@ -833,6 +835,10 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var showingImageExportOptions = false
     @State private var isToolbarExpanded = false
+    @State private var showingProjectInfo = false
+    @State private var scrollToTop = false
+    @State private var editorScrollTrigger = UUID()
+    @State private var previewScrollTrigger = UUID()
     
     // iPad适配相关属性
     private var isIPad: Bool {
@@ -903,6 +909,22 @@ struct ContentView: View {
                                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                                 .animation(.easeInOut(duration: 0.3), value: selectedTab)
                                 .padding(.horizontal, horizontalPadding(for: geometry))
+                                .onChange(of: scrollToTop) { _ in
+                                    if scrollToTop {
+                                        // 在iPhone TabView模式下，强制切换到编辑器tab然后滚动
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            selectedTab = 0
+                                        }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                            // 重置TextEditor
+                                            editorScrollTrigger = UUID()
+                                            previewScrollTrigger = UUID()
+                                        }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                                            scrollToTop = false
+                                        }
+                                    }
+                                }
                             }
                         }
                         
@@ -932,7 +954,12 @@ struct ContentView: View {
             ModernExportSheet(viewModel: viewModel, showingImageExportOptions: $showingImageExportOptions)
         }
         .sheet(isPresented: $showingHistory) {
-            HistoryView(viewModel: viewModel)
+            HistoryView(viewModel: viewModel) {
+                scrollToTop = true
+            }
+        }
+        .sheet(isPresented: $showingProjectInfo) {
+            ProjectInfoView()
         }
         .confirmationDialog("导出长图", isPresented: $showingImageExportOptions, titleVisibility: .visible) {
             Button("保存到相册") {
@@ -993,6 +1020,19 @@ struct ContentView: View {
                     // 展开的功能按钮组
                     if isToolbarExpanded {
                         HStack(spacing: isIPad ? 12 : 8) {
+                            ModernButton(
+                                icon: "info.circle.fill",
+                                action: { 
+                                    showingProjectInfo.toggle()
+                                },
+                                isDarkMode: isDarkMode,
+                                isIPad: isIPad
+                            )
+                            .transition(.asymmetric(
+                                insertion: .scale.combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.15)),
+                                removal: .scale.combined(with: .opacity).animation(.spring(response: 0.3, dampingFraction: 0.8))
+                            ))
+                            
                             ModernButton(
                                 icon: "clock.fill",
                                 action: { 
@@ -1159,6 +1199,7 @@ struct ContentView: View {
                 .onTapGesture(count: 2) {
                     hideKeyboard()
                 }
+                .id(editorScrollTrigger) // 通过改变ID来重置滚动位置
         }
         .clipShape(RoundedRectangle(cornerRadius: isIPad ? 20 : 16))
         .background(
@@ -1214,6 +1255,7 @@ struct ContentView: View {
                 }
             }
             .background(Color(.systemBackground))
+            .id(previewScrollTrigger) // 通过改变ID来重置滚动位置
         }
         .clipShape(RoundedRectangle(cornerRadius: isIPad ? 20 : 16))
         .background(
@@ -1469,6 +1511,185 @@ struct ExportOptionCard: View {
         }
         .scaleEffect(1.0)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: color)
+    }
+}
+
+struct ProjectInfoView: View {
+    @Environment(\.presentationMode) var presentationMode
+    
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header
+                    VStack(spacing: 20) {
+                        Image(systemName: "doc.text.fill")
+                            .font(.system(size: 64))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                        
+                        VStack(spacing: 12) {
+                            Text("Markdown Export Helper")
+                                .font(.system(size: isIPad ? 32 : 24, weight: .bold))
+                                .multilineTextAlignment(.center)
+                            
+                            Text("强大的 Markdown 编辑和导出工具")
+                                .font(.system(size: isIPad ? 18 : 16))
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(.top, 20)
+                    
+                    // Features
+                    VStack(spacing: 20) {
+                        FeatureRow(
+                            icon: "eye.fill",
+                            title: "实时预览",
+                            description: "即时查看 Markdown 渲染结果"
+                        )
+                        
+                        FeatureRow(
+                            icon: "square.and.arrow.up.fill",
+                            title: "多格式导出",
+                            description: "支持 PNG、PDF、HTML、Word、Markdown"
+                        )
+                        
+                        FeatureRow(
+                            icon: "paintbrush.fill",
+                            title: "主题切换",
+                            description: "支持亮色和暗色主题"
+                        )
+                        
+                        FeatureRow(
+                            icon: "clock.fill",
+                            title: "历史管理",
+                            description: "自动保存编辑历史，支持50条记录"
+                        )
+                        
+                        FeatureRow(
+                            icon: "ipad.and.iphone",
+                            title: "多设备适配",
+                            description: "完美适配 iPhone 和 iPad"
+                        )
+                    }
+                    
+                    // GitHub Link
+                    VStack(spacing: 16) {
+                        Text("开源项目")
+                            .font(.system(size: 20, weight: .semibold))
+                        
+                        Button(action: {
+                            if let url = URL(string: "https://github.com/Gigass/MarkdownExportHelperIos") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "link")
+                                    .font(.system(size: 18, weight: .semibold))
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("GitHub 仓库")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    
+                                    Text("github.com/Gigass/MarkdownExportHelperIos")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(.primary)
+                            .padding(20)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    
+                    // Footer
+                    VStack(spacing: 8) {
+                        Text("由 Gigass 开发")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.secondary)
+                        
+                        Text("Version 1.0")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.bottom, 20)
+                }
+                .padding(.horizontal, 24)
+            }
+            .background(
+                LinearGradient(
+                    colors: [Color(.systemBackground), Color(.systemGray6)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("完成") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                }
+            }
+        }
+    }
+}
+
+struct FeatureRow: View {
+    let icon: String
+    let title: String
+    let description: String
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.blue)
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+                
+                Text(description)
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 20)
     }
 }
 

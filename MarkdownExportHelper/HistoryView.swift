@@ -10,6 +10,12 @@ import SwiftUI
 struct HistoryView: View {
     @ObservedObject var viewModel: SimpleMarkdownViewModel
     @Environment(\.presentationMode) var presentationMode
+    let onScrollToTop: () -> Void
+    
+    init(viewModel: SimpleMarkdownViewModel, onScrollToTop: @escaping () -> Void = {}) {
+        self.viewModel = viewModel
+        self.onScrollToTop = onScrollToTop
+    }
     
     var body: some View {
         NavigationView {
@@ -37,7 +43,9 @@ struct HistoryView: View {
                             HistoryItemRow(item: item) { action in
                                 switch action {
                                 case .restore:
-                                    viewModel.restoreFromHistory(item)
+                                    viewModel.restoreFromHistory(item) {
+                                        onScrollToTop()
+                                    }
                                     presentationMode.wrappedValue.dismiss()
                                 case .delete:
                                     viewModel.deleteHistoryItem(item)
@@ -60,7 +68,9 @@ struct HistoryView: View {
                 if !viewModel.history.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button("清空全部") {
-                            viewModel.clearHistory()
+                            viewModel.clearHistory {
+                                presentationMode.wrappedValue.dismiss()
+                            }
                         }
                         .foregroundColor(.red)
                     }
@@ -86,42 +96,49 @@ struct HistoryItemRow: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.title)
-                        .font(.headline)
-                        .lineLimit(2)
-                    
-                    Text(timeFormatter.string(from: item.timestamp))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                HStack(spacing: 16) {
-                    Button(action: { onAction(.restore) }) {
-                        Image(systemName: "arrow.clockwise")
-                            .foregroundColor(.blue)
+        Button(action: { onAction(.restore) }) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.title)
+                            .font(.headline)
+                            .lineLimit(2)
+                            .foregroundColor(.primary)
+                        
+                        Text(timeFormatter.string(from: item.timestamp))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                     
+                    Spacer()
+                    
+                    // 删除按钮
                     Button(action: { onAction(.delete) }) {
                         Image(systemName: "trash")
+                            .font(.system(size: 16, weight: .medium))
                             .foregroundColor(.red)
+                            .frame(width: 32, height: 32)
+                            .background(Color.red.opacity(0.1))
+                            .clipShape(Circle())
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
+                
+                Text(item.content)
+                    .font(.body)
+                    .lineLimit(3)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
             }
-            
-            Text(item.content)
-                .font(.body)
-                .lineLimit(3)
-                .foregroundColor(.secondary)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            .background(Color(.systemBackground))
+            .cornerRadius(8)
         }
-        .padding(.vertical, 4)
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
 #Preview {
-    HistoryView(viewModel: SimpleMarkdownViewModel())
+    HistoryView(viewModel: SimpleMarkdownViewModel(), onScrollToTop: {})
 }
