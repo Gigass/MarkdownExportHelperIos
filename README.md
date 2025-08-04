@@ -28,7 +28,7 @@ A powerful and elegant Markdown editor for iOS and iPadOS, designed for a seamle
 
 | Editor | Preview |
 | :---: | :---: |
-| <img src="iphonePre1.png" width="300"> | <img src="iphonePre2.png" width="300"> |
+| <img src="iphonePre1.png" width="300"> | <img src="iphonePre.png" width="300"> |
 
 ### iPad Layout (Side-by-side)
 
