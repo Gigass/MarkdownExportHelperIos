@@ -108,35 +108,7 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func shareImage(_ image: UIImage) {
-        let activityViewController = UIActivityViewController(activityItems: [image], applicationActivities: nil)
-        
-        // 获取当前显示的视图控制器
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            
-            var rootViewController = window.rootViewController
-            
-            // 找到最顶层的视图控制器
-            while let presentedViewController = rootViewController?.presentedViewController {
-                rootViewController = presentedViewController
-            }
-            
-            if let topViewController = rootViewController {
-                // iPad支持
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    activityViewController.popoverPresentationController?.sourceView = topViewController.view
-                    activityViewController.popoverPresentationController?.sourceRect = CGRect(
-                        x: topViewController.view.bounds.midX,
-                        y: topViewController.view.bounds.midY,
-                        width: 0,
-                        height: 0
-                    )
-                    activityViewController.popoverPresentationController?.permittedArrowDirections = []
-                }
-                
-                topViewController.present(activityViewController, animated: true, completion: nil)
-            }
-        }
+        presentActivityViewController(with: [image])
     }
     
     private func loadHistory() {
@@ -217,58 +189,76 @@ class SimpleMarkdownViewModel: ObservableObject {
                 .padding(32)
                 .background(Color(.systemBackground))
             
-            guard let pdfData = view.renderAsPDF() else {
+            // 先生成图片，然后转换为PDF
+            guard let image = view.renderAsLongImage(width: 612) else {
                 self.isExportingImage = false
                 self.showToast(message: "PDF 生成失败")
                 return
             }
+            
+            // 将图片转换为PDF
+            let pdfData = self.createPDFFromImage(image)
             
             self.isExportingImage = false
             self.savePDFToFiles(data: pdfData)
         }
     }
     
-    private func savePDFToFiles(data: Data) {
-        let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).pdf"
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+    private func createPDFFromImage(_ image: UIImage) -> Data {
+        let pdfData = NSMutableData()
         
-        do {
-            try data.write(to: tempURL)
-            presentActivityViewController(with: [tempURL])
-            showToast(message: "PDF 已生成")
-        } catch {
-            showToast(message: "PDF 保存失败: \(error.localizedDescription)")
-        }
+        // 使用图片尺寸创建PDF
+        let pdfRect = CGRect(origin: .zero, size: image.size)
+        
+        UIGraphicsBeginPDFContextToData(pdfData, pdfRect, nil)
+        UIGraphicsBeginPDFPage()
+        
+        // 将图片绘制到PDF页面
+        image.draw(in: pdfRect)
+        
+        UIGraphicsEndPDFContext()
+        
+        return pdfData as Data
+    }
+    
+    private func savePDFToFiles(data: Data) {
+        // 创建一个自定义的活动项提供器
+        let activityItem = PDFActivityItemProvider(pdfData: data)
+        presentActivityViewController(with: [activityItem])
+        showToast(message: "PDF 已生成")
     }
     
     private func presentActivityViewController(with items: [Any]) {
-        let activityViewController = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            
-            var rootViewController = window.rootViewController
-            
-            // 找到最顶层的视图控制器
-            while let presentedViewController = rootViewController?.presentedViewController {
-                rootViewController = presentedViewController
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let window = windowScene.windows.first,
+                  let rootViewController = window.rootViewController else {
+                self.showToast(message: "无法打开分享界面")
+                return
             }
             
-            if let topViewController = rootViewController {
-                // iPad支持
-                if UIDevice.current.userInterfaceIdiom == .pad {
-                    activityViewController.popoverPresentationController?.sourceView = topViewController.view
-                    activityViewController.popoverPresentationController?.sourceRect = CGRect(
-                        x: topViewController.view.bounds.midX,
-                        y: topViewController.view.bounds.midY,
-                        width: 0,
-                        height: 0
-                    )
-                    activityViewController.popoverPresentationController?.permittedArrowDirections = []
-                }
-                
-                topViewController.present(activityViewController, animated: true, completion: nil)
+            let activityViewController = UIActivityViewController(activityItems: items, applicationActivities: nil)
+            
+            // 确保包含常用的分享应用和保存选项
+            activityViewController.excludedActivityTypes = [
+                .assignToContact,
+                .addToReadingList,
+                .openInIBooks
+            ]
+            
+            // iPad支持
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                activityViewController.popoverPresentationController?.sourceView = rootViewController.view
+                activityViewController.popoverPresentationController?.sourceRect = CGRect(
+                    x: rootViewController.view.bounds.midX,
+                    y: rootViewController.view.bounds.midY,
+                    width: 0,
+                    height: 0
+                )
+                activityViewController.popoverPresentationController?.permittedArrowDirections = []
             }
+            
+            rootViewController.present(activityViewController, animated: true, completion: nil)
         }
     }
     
@@ -278,15 +268,10 @@ class SimpleMarkdownViewModel: ObservableObject {
         
         let htmlContent = convertMarkdownToHTML(markdownText)
         let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).html"
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        let activityItem = TextActivityItemProvider(text: htmlContent, fileName: fileName, mimeType: "text/html")
         
-        do {
-            try htmlContent.write(to: tempURL, atomically: true, encoding: .utf8)
-            presentActivityViewController(with: [tempURL])
-            showToast(message: "HTML 文件已生成")
-        } catch {
-            showToast(message: "HTML 保存失败: \(error.localizedDescription)")
-        }
+        presentActivityViewController(with: [activityItem])
+        showToast(message: "HTML 文件已生成")
     }
     
     private func convertMarkdownToHTML(_ markdown: String) -> String {
@@ -421,15 +406,10 @@ class SimpleMarkdownViewModel: ObservableObject {
         saveToHistory()
         
         let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).md"
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        let activityItem = TextActivityItemProvider(text: markdownText, fileName: fileName, mimeType: "text/markdown")
         
-        do {
-            try markdownText.write(to: tempURL, atomically: true, encoding: .utf8)
-            presentActivityViewController(with: [tempURL])
-            showToast(message: "Markdown 文件已生成")
-        } catch {
-            showToast(message: "Markdown 文件保存失败: \(error.localizedDescription)")
-        }
+        presentActivityViewController(with: [activityItem])
+        showToast(message: "Markdown 文件已生成")
     }
     
     func exportAsWord() {
@@ -438,15 +418,10 @@ class SimpleMarkdownViewModel: ObservableObject {
         
         let wordContent = convertMarkdownToWordHTML(markdownText)
         let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).doc"
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        let activityItem = TextActivityItemProvider(text: wordContent, fileName: fileName, mimeType: "application/msword")
         
-        do {
-            try wordContent.write(to: tempURL, atomically: true, encoding: .utf8)
-            presentActivityViewController(with: [tempURL])
-            showToast(message: "Word 文档已生成")
-        } catch {
-            showToast(message: "Word 文档保存失败: \(error.localizedDescription)")
-        }
+        presentActivityViewController(with: [activityItem])
+        showToast(message: "Word 文档已生成")
     }
     
     private func convertMarkdownToWordHTML(_ markdown: String) -> String {
@@ -908,8 +883,8 @@ struct ContentView: View {
                                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                                 .animation(.easeInOut(duration: 0.3), value: selectedTab)
                                 .padding(.horizontal, horizontalPadding(for: geometry))
-                                .onChange(of: scrollToTop) { _ in
-                                    if scrollToTop {
+                                .onChange(of: scrollToTop) { _, newValue in
+                                    if newValue {
                                         // 在iPhone TabView模式下，强制切换到编辑器tab然后滚动
                                         withAnimation(.easeInOut(duration: 0.3)) {
                                             selectedTab = 0
@@ -1659,6 +1634,116 @@ struct FeatureRow: View {
             Spacer()
         }
         .padding(.horizontal, 20)
+    }
+}
+
+// MARK: - Activity Item Providers
+class PDFActivityItemProvider: UIActivityItemProvider, @unchecked Sendable {
+    private let pdfData: Data
+    private let fileName: String
+    
+    init(pdfData: Data) {
+        self.pdfData = pdfData
+        self.fileName = "Markdown_Export_\(Date().timeIntervalSince1970).pdf"
+        super.init(placeholderItem: fileName)
+    }
+    
+    override var item: Any {
+        // 创建临时PDF文件用于分享
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(fileName)
+        
+        do {
+            try pdfData.write(to: fileURL)
+            return fileURL
+        } catch {
+            print("Error writing PDF file: \(error)")
+            return pdfData
+        }
+    }
+    
+    override func activityViewController(_ activityViewController: UIActivityViewController, subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
+        return "Markdown Export - \(fileName)"
+    }
+    
+    override func activityViewController(_ activityViewController: UIActivityViewController, dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
+        return "com.adobe.pdf"
+    }
+    
+    override func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        // 为不同的分享类型提供合适的数据格式
+        return item // 使用文件URL
+    }
+    
+    override func activityViewController(_ activityViewController: UIActivityViewController, thumbnailImageForActivityType activityType: UIActivity.ActivityType?, suggestedSize size: CGSize) -> UIImage? {
+        // 为PDF提供缩略图
+        return UIImage(systemName: "doc.fill")
+    }
+}
+
+class TextActivityItemProvider: UIActivityItemProvider, @unchecked Sendable {
+    private let text: String
+    private let fileName: String
+    private let mimeType: String
+    private let fileData: Data
+    
+    init(text: String, fileName: String, mimeType: String) {
+        self.text = text
+        self.fileName = fileName
+        self.mimeType = mimeType
+        self.fileData = text.data(using: .utf8) ?? Data()
+        super.init(placeholderItem: fileName)
+    }
+    
+    override var item: Any {
+        // 创建临时文件URL用于分享
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileURL = tempDir.appendingPathComponent(fileName)
+        
+        do {
+            try fileData.write(to: fileURL)
+            return fileURL
+        } catch {
+            print("Error writing file: \(error)")
+            return fileData
+        }
+    }
+    
+    override func activityViewController(_ activityViewController: UIActivityViewController, subjectForActivityType activityType: UIActivity.ActivityType?) -> String {
+        return "Markdown Export - \(fileName)"
+    }
+    
+    override func activityViewController(_ activityViewController: UIActivityViewController, dataTypeIdentifierForActivityType activityType: UIActivity.ActivityType?) -> String {
+        // 根据文件扩展名返回正确的UTI
+        if fileName.hasSuffix(".html") {
+            return "public.html"
+        } else if fileName.hasSuffix(".md") {
+            return "net.daringfireball.markdown"
+        } else if fileName.hasSuffix(".doc") {
+            return "com.microsoft.word.doc"
+        }
+        return "public.text"
+    }
+    
+    override func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        // 为不同的分享类型提供合适的数据格式
+        if activityType == .copyToPasteboard {
+            return text // 复制到剪贴板时使用文本
+        } else {
+            return item // 其他情况使用文件URL
+        }
+    }
+    
+    override func activityViewController(_ activityViewController: UIActivityViewController, thumbnailImageForActivityType activityType: UIActivity.ActivityType?, suggestedSize size: CGSize) -> UIImage? {
+        // 根据文件类型提供缩略图
+        if fileName.hasSuffix(".html") {
+            return UIImage(systemName: "safari.fill")
+        } else if fileName.hasSuffix(".md") {
+            return UIImage(systemName: "m.square.fill")
+        } else if fileName.hasSuffix(".doc") {
+            return UIImage(systemName: "doc.text.fill")
+        }
+        return UIImage(systemName: "doc.fill")
     }
 }
 

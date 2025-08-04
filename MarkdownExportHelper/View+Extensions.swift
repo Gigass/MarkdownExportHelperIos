@@ -36,19 +36,6 @@ private class NoInsetHostingView<V: View>: NSHostingView<V> {
 #if os(iOS)
 import UIKit
 
-extension UIGraphicsImageRenderer {
-    func pdfData(actions: (CGContext) -> Void) -> Data {
-        let data = NSMutableData()
-        UIGraphicsBeginPDFContextToData(data, self.format.bounds, nil)
-        UIGraphicsBeginPDFPage()
-        if let context = UIGraphicsGetCurrentContext() {
-            actions(context)
-        }
-        UIGraphicsEndPDFContext()
-        return data as Data
-    }
-}
-
 
 extension View {
     func renderAsImage() -> UIImage? {
@@ -71,11 +58,22 @@ extension View {
         
         controller.view.bounds = CGRect(origin: .zero, size: targetSize)
         controller.view.backgroundColor = UIColor.systemBackground
+        controller.view.layoutIfNeeded()
         
-        let renderer = UIGraphicsImageRenderer(size: targetSize)
-        return renderer.pdfData { context in
-            controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+        // 使用正确的PDF生成方法
+        let pdfData = NSMutableData()
+        UIGraphicsBeginPDFContextToData(pdfData, CGRect(origin: .zero, size: targetSize), nil)
+        UIGraphicsBeginPDFPage()
+        
+        guard let pdfContext = UIGraphicsGetCurrentContext() else {
+            UIGraphicsEndPDFContext()
+            return nil
         }
+        
+        controller.view.layer.render(in: pdfContext)
+        UIGraphicsEndPDFContext()
+        
+        return pdfData as Data
     }
 }
 
