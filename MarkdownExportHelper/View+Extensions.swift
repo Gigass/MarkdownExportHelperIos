@@ -36,18 +36,45 @@ private class NoInsetHostingView<V: View>: NSHostingView<V> {
 #if os(iOS)
 import UIKit
 
+extension UIGraphicsImageRenderer {
+    func pdfData(actions: (CGContext) -> Void) -> Data {
+        let data = NSMutableData()
+        UIGraphicsBeginPDFContextToData(data, self.format.bounds, nil)
+        UIGraphicsBeginPDFPage()
+        if let context = UIGraphicsGetCurrentContext() {
+            actions(context)
+        }
+        UIGraphicsEndPDFContext()
+        return data as Data
+    }
+}
+
+
 extension View {
     func renderAsImage() -> UIImage? {
-        let controller = UIHostingController(rootView: self.edgesIgnoringSafeArea(.all))
-        let view = controller.view
-
-        let targetSize = controller.view.intrinsicContentSize
-        view?.bounds = CGRect(origin: .zero, size: targetSize)
-        view?.backgroundColor = .clear
-
+        let controller = UIHostingController(rootView: self)
+        
+        // Get the size that fits the content
+        let targetSize = controller.sizeThatFits(in: CGSize(width: 375, height: CGFloat.greatestFiniteMagnitude))
+        controller.view.bounds = CGRect(origin: .zero, size: targetSize)
+        controller.view.backgroundColor = UIColor.systemBackground
+        
         let renderer = UIGraphicsImageRenderer(size: targetSize)
         return renderer.image { _ in
-            view?.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+            controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+        }
+    }
+    
+    func renderAsPDF() -> Data? {
+        let controller = UIHostingController(rootView: self)
+        let targetSize = controller.sizeThatFits(in: CGSize(width: 612, height: CGFloat.greatestFiniteMagnitude)) // Letter width
+        
+        controller.view.bounds = CGRect(origin: .zero, size: targetSize)
+        controller.view.backgroundColor = UIColor.systemBackground
+        
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        return renderer.pdfData { context in
+            controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
         }
     }
 }

@@ -29,9 +29,29 @@
 		1AC768892E3338D2003E1173 /* MarkdownExportHelperUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownExportHelperUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		1AD6E1B32E405E7F0065472B /* Exceptions for "MarkdownExportHelper" folder in "MarkdownExportHelper" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ContentView.swift,
+				FormattedText.swift,
+				HistoryView.swift,
+				ImageSaver.swift,
+				MarkdownExportHelperApp.swift,
+				MarkdownViewModel.swift,
+				ToastView.swift,
+				"View+Extensions.swift",
+			);
+			target = 1AC768722E3338D0003E1173 /* MarkdownExportHelper */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1A943B492E3321FE00E80034 /* MarkdownExportHelper */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				1AD6E1B32E405E7F0065472B /* Exceptions for "MarkdownExportHelper" folder in "MarkdownExportHelper" target */,
+			);
 			path = MarkdownExportHelper;
 			sourceTree = "<group>";
 		};
@@ -394,6 +414,7 @@
 				DEVELOPMENT_TEAM = D656GS6DUT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MarkdownExportHelper/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -429,6 +450,7 @@
 				DEVELOPMENT_TEAM = D656GS6DUT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MarkdownExportHelper/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
