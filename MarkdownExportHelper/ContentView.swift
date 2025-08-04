@@ -415,12 +415,12 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func exportAsWord() {
-        let rtfContent = convertMarkdownToRTF(markdownText)
-        let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).rtf"
+        let wordContent = convertMarkdownToWordHTML(markdownText)
+        let fileName = "Markdown_Export_\(Date().timeIntervalSince1970).doc"
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         
         do {
-            try rtfContent.write(to: tempURL, atomically: true, encoding: .utf8)
+            try wordContent.write(to: tempURL, atomically: true, encoding: .utf8)
             presentActivityViewController(with: [tempURL])
             showToast(message: "Word 文档已生成")
         } catch {
@@ -428,54 +428,198 @@ class SimpleMarkdownViewModel: ObservableObject {
         }
     }
     
-    private func convertMarkdownToRTF(_ markdown: String) -> String {
-        let rtf = markdown
+    private func convertMarkdownToWordHTML(_ markdown: String) -> String {
+        var html = markdown
         
-        // RTF header
-        var rtfContent = "{\\rtf1\\ansi\\deff0 {\\fonttbl {\\f0 Times New Roman;}{\\f1 Courier New;}}"
-        rtfContent += "{\\colortbl;\\red0\\green0\\blue0;\\red128\\green128\\blue128;}"
+        // 替换标题
+        html = html.replacingOccurrences(of: "### (.+)", with: "<h3>$1</h3>", options: .regularExpression)
+        html = html.replacingOccurrences(of: "## (.+)", with: "<h2>$1</h2>", options: .regularExpression)
+        html = html.replacingOccurrences(of: "# (.+)", with: "<h1>$1</h1>", options: .regularExpression)
         
-        let lines = rtf.components(separatedBy: .newlines)
+        // 替换粗体和斜体
+        html = html.replacingOccurrences(of: "\\*\\*(.+?)\\*\\*", with: "<strong>$1</strong>", options: .regularExpression)
+        html = html.replacingOccurrences(of: "\\*(.+?)\\*", with: "<em>$1</em>", options: .regularExpression)
+        
+        // 替换行内代码
+        html = html.replacingOccurrences(of: "`(.+?)`", with: "<code>$1</code>", options: .regularExpression)
+        
+        // 替换列表项
+        html = html.replacingOccurrences(of: "^- (.+)", with: "<li>$1</li>", options: .regularExpression)
+        html = html.replacingOccurrences(of: "^\\* (.+)", with: "<li>$1</li>", options: .regularExpression)
+        
+        // 替换引用
+        html = html.replacingOccurrences(of: "^> (.+)", with: "<blockquote>$1</blockquote>", options: .regularExpression)
+        
+        // 处理段落
+        let lines = html.components(separatedBy: .newlines)
+        var processedLines: [String] = []
+        var inList = false
         
         for line in lines {
             let trimmedLine = line.trimmingCharacters(in: .whitespaces)
             
             if trimmedLine.isEmpty {
-                rtfContent += "\\par "
-                continue
-            }
-            
-            var processedLine = trimmedLine
-            
-            // 处理标题
-            if processedLine.hasPrefix("### ") {
-                processedLine = String(processedLine.dropFirst(4))
-                rtfContent += "\\f0\\fs24\\b \(processedLine)\\b0\\par "
-            } else if processedLine.hasPrefix("## ") {
-                processedLine = String(processedLine.dropFirst(3))
-                rtfContent += "\\f0\\fs28\\b \(processedLine)\\b0\\par "
-            } else if processedLine.hasPrefix("# ") {
-                processedLine = String(processedLine.dropFirst(2))
-                rtfContent += "\\f0\\fs32\\b \(processedLine)\\b0\\par "
-            } else if processedLine.hasPrefix("- ") || processedLine.hasPrefix("* ") {
-                processedLine = String(processedLine.dropFirst(2))
-                rtfContent += "\\f0\\fs20 \\bullet \(processedLine)\\par "
-            } else if processedLine.hasPrefix("> ") {
-                processedLine = String(processedLine.dropFirst(2))
-                rtfContent += "\\f0\\fs20\\i \(processedLine)\\i0\\par "
+                if inList {
+                    processedLines.append("</ul>")
+                    inList = false
+                }
+                processedLines.append("<br>")
+            } else if trimmedLine.hasPrefix("<li>") {
+                if !inList {
+                    processedLines.append("<ul>")
+                    inList = true
+                }
+                processedLines.append(trimmedLine)
             } else {
-                // 处理粗体和斜体
-                processedLine = processedLine.replacingOccurrences(of: "**(.+?)**", with: "\\\\b $1\\\\b0", options: .regularExpression)
-                processedLine = processedLine.replacingOccurrences(of: "*(.+?)*", with: "\\\\i $1\\\\i0", options: .regularExpression)
-                processedLine = processedLine.replacingOccurrences(of: "`(.+?)`", with: "\\\\f1 $1\\\\f0", options: .regularExpression)
+                if inList {
+                    processedLines.append("</ul>")
+                    inList = false
+                }
                 
-                rtfContent += "\\f0\\fs20 \(processedLine)\\par "
+                if !trimmedLine.hasPrefix("<h") && !trimmedLine.hasPrefix("<blockquote>") {
+                    processedLines.append("<p>\(trimmedLine)</p>")
+                } else {
+                    processedLines.append(trimmedLine)
+                }
             }
         }
         
-        rtfContent += "}"
+        if inList {
+            processedLines.append("</ul>")
+        }
         
-        return rtfContent
+        let bodyContent = processedLines.joined(separator: "\n")
+        
+        return """
+        <!DOCTYPE html>
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="ProgId" content="Word.Document">
+            <meta name="Generator" content="Microsoft Word">
+            <meta name="Originator" content="Microsoft Word">
+            <title>Markdown Export</title>
+            <!--[if gte mso 9]>
+            <xml>
+                <w:WordDocument>
+                    <w:View>Print</w:View>
+                    <w:Zoom>90</w:Zoom>
+                    <w:DoNotOptimizeForBrowser/>
+                </w:WordDocument>
+            </xml>
+            <![endif]-->
+            <style>
+                @page {
+                    size: A4;
+                    margin: 2.54cm 1.91cm 2.54cm 1.91cm;
+                    mso-header-margin: 1.27cm;
+                    mso-footer-margin: 1.27cm;
+                }
+                
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #333333;
+                    margin: 0;
+                    padding: 20px;
+                    background-color: white;
+                    -webkit-text-size-adjust: 100%;
+                    -ms-text-size-adjust: 100%;
+                }
+                
+                h1, h2, h3 {
+                    color: #2c3e50;
+                    margin-top: 24px;
+                    margin-bottom: 16px;
+                    font-weight: 600;
+                    page-break-after: avoid;
+                }
+                
+                h1 {
+                    font-size: 32px;
+                    border-bottom: 3px solid #3498db;
+                    padding-bottom: 10px;
+                    margin-top: 0;
+                }
+                
+                h2 {
+                    font-size: 24px;
+                    border-bottom: 2px solid #ecf0f1;
+                    padding-bottom: 8px;
+                }
+                
+                h3 {
+                    font-size: 20px;
+                    color: #34495e;
+                }
+                
+                p {
+                    margin-bottom: 16px;
+                    text-align: justify;
+                    orphans: 2;
+                    widows: 2;
+                }
+                
+                strong {
+                    font-weight: 600;
+                    color: #2c3e50;
+                }
+                
+                em {
+                    font-style: italic;
+                    color: #7f8c8d;
+                }
+                
+                code {
+                    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+                    font-size: 14px;
+                    background-color: #f8f9fa;
+                    color: #d73a49;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    border: 1px solid #e1e4e8;
+                }
+                
+                blockquote {
+                    margin: 16px 0;
+                    padding: 0 16px;
+                    border-left: 4px solid #3498db;
+                    background-color: #f8f9fa;
+                    font-style: italic;
+                    color: #6c757d;
+                    page-break-inside: avoid;
+                }
+                
+                ul {
+                    margin: 16px 0;
+                    padding-left: 24px;
+                }
+                
+                li {
+                    margin-bottom: 8px;
+                    line-height: 1.5;
+                }
+                
+                /* Word-specific styles */
+                @media print {
+                    body {
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                }
+                
+                /* Ensure consistent spacing */
+                * {
+                    box-sizing: border-box;
+                }
+            </style>
+        </head>
+        <body>
+        \(bodyContent)
+        </body>
+        </html>
+        """
     }
     
     private func showToast(message: String) {
@@ -1106,7 +1250,7 @@ struct ModernExportSheet: View {
                     ExportOptionCard(
                         icon: "doc.text.fill",
                         title: "Word",
-                        subtitle: "DOCX 格式",
+                        subtitle: "DOC 格式",
                         color: .blue,
                         action: {
                             viewModel.exportAsWord()
