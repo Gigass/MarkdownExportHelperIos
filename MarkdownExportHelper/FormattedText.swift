@@ -15,7 +15,7 @@ struct FormattedTextPart {
 }
 
 // MARK: - Enhanced Markdown Rendering
-extension MarkdownPreviewView {
+extension ProfessionalMarkdownPreview {
     func createFormattedText(_ text: String) -> Text {
         let parts = parseInlineFormatting(text)
         var result = Text("")

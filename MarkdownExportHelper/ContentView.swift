@@ -112,7 +112,7 @@ class SimpleMarkdownViewModel: ObservableObject {
         isExportingImage = true
         print("Starting image export for content length: \(markdownText.count)")
         
-        let view = MarkdownPreviewView(content: self.markdownText)
+        let view = ProfessionalMarkdownPreview(content: self.markdownText)
             .padding(32)
             .background(Color(.systemBackground))
         
@@ -206,70 +206,121 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     private func convertMarkdownToPlainText(_ markdown: String) -> String {
-        // 利用现有的 parseMarkdown 逻辑来提取纯文本
-        let elements = parseMarkdownToElements(markdown)
+        // 使用新的增强解析器来提取纯文本
+        let elements = parseEnhancedMarkdownForPlainText(markdown)
         var plainTextLines: [String] = []
         
         for element in elements {
             switch element.type {
-            case .heading1, .heading2, .heading3, .paragraph, .listItem, .quote:
-                // 使用 element.content 已经去掉了Markdown标记的内容
-                // 然后使用 AttributedString 来处理内嵌的格式化（如粗体、斜体等）
-                if let plainString = extractPlainText(from: element.formattedContent) {
+            case .heading, .paragraph, .unorderedList, .orderedList, .quote:
+                // 使用 AttributedString 来提取纯文本（已去除所有Markdown标记）
+                let plainString = extractPlainTextFromAttributedString(element.formattedContent)
+                if !plainString.isEmpty {
                     plainTextLines.append(plainString)
-                } else {
-                    plainTextLines.append(element.content)
                 }
             case .codeBlock:
-                // 代码块跳过，不包含在纯文本中
-                continue
+                // 包含代码块内容，但不包含```标记
+                if !element.content.isEmpty {
+                    plainTextLines.append(element.content)
+                }
+            case .horizontalRule:
+                // 分割线用简单的文本表示
+                plainTextLines.append("---")
             }
         }
         
         return plainTextLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
-    private func parseMarkdownToElements(_ text: String) -> [MarkdownElement] {
+    // 专门为纯文本提取使用的解析器
+    private func parseEnhancedMarkdownForPlainText(_ text: String) -> [EnhancedMarkdownElement] {
         let lines = text.components(separatedBy: .newlines)
-        var elements: [MarkdownElement] = []
+        var elements: [EnhancedMarkdownElement] = []
+        var codeBlockContent: [String] = []
+        var inCodeBlock = false
+        var codeBlockLanguage = ""
         
         for (index, line) in lines.enumerated() {
             let trimmedLine = line.trimmingCharacters(in: .whitespaces)
             
+            // 处理代码块
+            if trimmedLine.hasPrefix("```") {
+                if inCodeBlock {
+                    // 结束代码块
+                    let fullContent = codeBlockContent.joined(separator: "\n")
+                    elements.append(EnhancedMarkdownElement(
+                        id: index, 
+                        type: .codeBlock(language: codeBlockLanguage), 
+                        content: fullContent, 
+                        formattedContent: AttributedString(fullContent)
+                    ))
+                    codeBlockContent = []
+                    inCodeBlock = false
+                    codeBlockLanguage = ""
+                } else {
+                    // 开始代码块
+                    inCodeBlock = true
+                    codeBlockLanguage = String(trimmedLine.dropFirst(3))
+                }
+                continue
+            }
+            
+            if inCodeBlock {
+                codeBlockContent.append(line) // 保持原始缩进
+                continue
+            }
+            
             if trimmedLine.isEmpty {
                 continue
-            } else if trimmedLine.hasPrefix("# ") {
+            } else if trimmedLine.hasPrefix("######") {
+                let content = String(trimmedLine.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 6), content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
+            } else if trimmedLine.hasPrefix("#####") {
+                let content = String(trimmedLine.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 5), content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
+            } else if trimmedLine.hasPrefix("####") {
+                let content = String(trimmedLine.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 4), content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
+            } else if trimmedLine.hasPrefix("###") {
+                let content = String(trimmedLine.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 3), content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
+            } else if trimmedLine.hasPrefix("##") {
+                let content = String(trimmedLine.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 2), content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
+            } else if trimmedLine.hasPrefix("#") {
+                let content = String(trimmedLine.dropFirst(1)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 1), content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
+            } else if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") || trimmedLine.hasPrefix("+ ") {
                 let content = String(trimmedLine.dropFirst(2))
-                elements.append(MarkdownElement(id: index, type: .heading1, content: content, formattedContent: createAttributedString(content)))
-            } else if trimmedLine.hasPrefix("## ") {
-                let content = String(trimmedLine.dropFirst(3))
-                elements.append(MarkdownElement(id: index, type: .heading2, content: content, formattedContent: createAttributedString(content)))
-            } else if trimmedLine.hasPrefix("### ") {
-                let content = String(trimmedLine.dropFirst(4))
-                elements.append(MarkdownElement(id: index, type: .heading3, content: content, formattedContent: createAttributedString(content)))
-            } else if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") {
-                let content = String(trimmedLine.dropFirst(2))
-                elements.append(MarkdownElement(id: index, type: .listItem, content: content, formattedContent: createAttributedString(content)))
+                elements.append(EnhancedMarkdownElement(id: index, type: .unorderedList, content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
+            } else if let match = trimmedLine.range(of: "^\\d+\\. ", options: .regularExpression) {
+                let content = String(trimmedLine[match.upperBound...])
+                elements.append(EnhancedMarkdownElement(id: index, type: .orderedList, content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
             } else if trimmedLine.hasPrefix("> ") {
                 let content = String(trimmedLine.dropFirst(2))
-                elements.append(MarkdownElement(id: index, type: .quote, content: content, formattedContent: createAttributedString(content)))
-            } else if trimmedLine.hasPrefix("```") {
-                elements.append(MarkdownElement(id: index, type: .codeBlock, content: trimmedLine, formattedContent: AttributedString(trimmedLine)))
+                elements.append(EnhancedMarkdownElement(id: index, type: .quote, content: content, formattedContent: createEnhancedAttributedStringForPlainText(content)))
+            } else if trimmedLine == "---" || trimmedLine == "***" || trimmedLine == "___" {
+                elements.append(EnhancedMarkdownElement(id: index, type: .horizontalRule, content: "", formattedContent: AttributedString("")))
             } else {
-                elements.append(MarkdownElement(id: index, type: .paragraph, content: trimmedLine, formattedContent: createAttributedString(trimmedLine)))
+                elements.append(EnhancedMarkdownElement(id: index, type: .paragraph, content: trimmedLine, formattedContent: createEnhancedAttributedStringForPlainText(trimmedLine)))
             }
         }
         
         return elements
     }
     
-    private func createAttributedString(_ text: String) -> AttributedString {
-        let attributedString = try! AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))
-        return attributedString
+    // 为纯文本提取创建AttributedString
+    private func createEnhancedAttributedStringForPlainText(_ text: String) -> AttributedString {
+        do {
+            let attributedString = try AttributedString(markdown: text, options: .init(interpretedSyntax: .full))
+            return attributedString
+        } catch {
+            return AttributedString(text)
+        }
     }
     
-    private func extractPlainText(from attributedString: AttributedString) -> String? {
-        // AttributedString 的 String 表示已经是纯文本了
+    private func extractPlainTextFromAttributedString(_ attributedString: AttributedString) -> String {
+        // AttributedString 的字符序列就是纯文本
         return String(attributedString.characters)
     }
     
@@ -323,9 +374,9 @@ class SimpleMarkdownViewModel: ObservableObject {
         let contentWidth = a4Width - margin * 2
         let contentHeight = a4Height - margin * 2
         
-        // 解析Markdown内容
-        let elements = parseMarkdownToElements(markdownText)
-        print("PDF Generation - Elements count: \(elements.count)")
+        // 使用新的增强解析器解析Markdown内容
+        let elements = parseEnhancedMarkdownForPDF(markdownText)
+        print("PDF Generation - Enhanced elements count: \(elements.count)")
         
         // 使用 UIGraphicsPDFRenderer 创建可编辑的PDF
         let pdfData = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: a4Width, height: a4Height)).pdfData { context in
@@ -351,8 +402,8 @@ class SimpleMarkdownViewModel: ObservableObject {
             }
             
             for (index, element) in elements.enumerated() {
-                let elementHeight = estimateElementHeight(element, width: contentWidth)
-                print("PDF Generation - Element \(index): \(element.type), height: \(elementHeight)")
+                let elementHeight = estimateEnhancedElementHeight(element, width: contentWidth)
+                print("PDF Generation - Enhanced element \(index): \(element.type), height: \(elementHeight)")
                 
                 // 检查是否需要新页面
                 if currentY + elementHeight > contentHeight + margin {
@@ -364,10 +415,10 @@ class SimpleMarkdownViewModel: ObservableObject {
                 }
                 
                 // 渲染元素到PDF
-                print("PDF Generation - Rendering element at y: \(currentY)")
-                renderElementToPDF(element: element, 
-                                 context: context.cgContext, 
-                                 rect: CGRect(x: margin, y: currentY, width: contentWidth, height: elementHeight))
+                print("PDF Generation - Rendering enhanced element at y: \(currentY)")
+                renderEnhancedElementToPDF(element: element, 
+                                         context: context.cgContext, 
+                                         rect: CGRect(x: margin, y: currentY, width: contentWidth, height: elementHeight))
                 
                 currentY += elementHeight + 15 // 增加元素间距
             }
@@ -378,19 +429,115 @@ class SimpleMarkdownViewModel: ObservableObject {
         return pdfData
     }
     
-    private func estimateElementHeight(_ element: MarkdownElement, width: CGFloat) -> CGFloat {
+    // 专门为PDF使用的增强解析器（复用预览逻辑）
+    private func parseEnhancedMarkdownForPDF(_ text: String) -> [EnhancedMarkdownElement] {
+        let lines = text.components(separatedBy: .newlines)
+        var elements: [EnhancedMarkdownElement] = []
+        var codeBlockContent: [String] = []
+        var inCodeBlock = false
+        var codeBlockLanguage = ""
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            // 处理代码块
+            if trimmedLine.hasPrefix("```") {
+                if inCodeBlock {
+                    // 结束代码块
+                    let fullContent = codeBlockContent.joined(separator: "\n")
+                    elements.append(EnhancedMarkdownElement(
+                        id: index, 
+                        type: .codeBlock(language: codeBlockLanguage), 
+                        content: fullContent, 
+                        formattedContent: AttributedString(fullContent)
+                    ))
+                    codeBlockContent = []
+                    inCodeBlock = false
+                    codeBlockLanguage = ""
+                } else {
+                    // 开始代码块
+                    inCodeBlock = true
+                    codeBlockLanguage = String(trimmedLine.dropFirst(3))
+                }
+                continue
+            }
+            
+            if inCodeBlock {
+                codeBlockContent.append(line) // 保持原始缩进
+                continue
+            }
+            
+            if trimmedLine.isEmpty {
+                continue
+            } else if trimmedLine.hasPrefix("######") {
+                let content = String(trimmedLine.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 6), content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if trimmedLine.hasPrefix("#####") {
+                let content = String(trimmedLine.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 5), content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if trimmedLine.hasPrefix("####") {
+                let content = String(trimmedLine.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 4), content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if trimmedLine.hasPrefix("###") {
+                let content = String(trimmedLine.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 3), content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if trimmedLine.hasPrefix("##") {
+                let content = String(trimmedLine.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 2), content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if trimmedLine.hasPrefix("#") {
+                let content = String(trimmedLine.dropFirst(1)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 1), content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") || trimmedLine.hasPrefix("+ ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(EnhancedMarkdownElement(id: index, type: .unorderedList, content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if let match = trimmedLine.range(of: "^\\d+\\. ", options: .regularExpression) {
+                let content = String(trimmedLine[match.upperBound...])
+                elements.append(EnhancedMarkdownElement(id: index, type: .orderedList, content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if trimmedLine.hasPrefix("> ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(EnhancedMarkdownElement(id: index, type: .quote, content: content, formattedContent: createEnhancedAttributedStringForPDF(content)))
+            } else if trimmedLine == "---" || trimmedLine == "***" || trimmedLine == "___" {
+                elements.append(EnhancedMarkdownElement(id: index, type: .horizontalRule, content: "", formattedContent: AttributedString("")))
+            } else {
+                elements.append(EnhancedMarkdownElement(id: index, type: .paragraph, content: trimmedLine, formattedContent: createEnhancedAttributedStringForPDF(trimmedLine)))
+            }
+        }
+        
+        return elements
+    }
+    
+    // 为PDF创建增强的AttributedString
+    private func createEnhancedAttributedStringForPDF(_ text: String) -> AttributedString {
+        // 使用完整的markdown语法支持
+        do {
+            let attributedString = try AttributedString(markdown: text, options: .init(interpretedSyntax: .full))
+            return attributedString
+        } catch {
+            // 如果解析失败，返回原始文本
+            return AttributedString(text)
+        }
+    }
+    
+    
+    // 增强版元素高度估算
+    private func estimateEnhancedElementHeight(_ element: EnhancedMarkdownElement, width: CGFloat) -> CGFloat {
         let font: UIFont
         switch element.type {
-        case .heading1:
-            font = UIFont.boldSystemFont(ofSize: 24)
-        case .heading2:
-            font = UIFont.boldSystemFont(ofSize: 20)
-        case .heading3:
-            font = UIFont.boldSystemFont(ofSize: 18)
-        case .paragraph, .listItem, .quote:
+        case .heading(let level):
+            switch level {
+            case 1: font = UIFont.boldSystemFont(ofSize: 24)
+            case 2: font = UIFont.boldSystemFont(ofSize: 20)
+            case 3: font = UIFont.boldSystemFont(ofSize: 18)
+            case 4: font = UIFont.boldSystemFont(ofSize: 16)
+            case 5: font = UIFont.boldSystemFont(ofSize: 14)
+            default: font = UIFont.boldSystemFont(ofSize: 12) // level 6
+            }
+        case .paragraph, .unorderedList, .orderedList, .quote:
             font = UIFont.systemFont(ofSize: 16)
         case .codeBlock:
             font = UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+        case .horizontalRule:
+            return 30 // 固定高度
         }
         
         // 确保文本不为空
@@ -406,36 +553,37 @@ class SimpleMarkdownViewModel: ObservableObject {
         return max(ceil(textSize.height) + 20, 40) // 增加更多的间距和最小高度
     }
     
-    private func renderElementToPDF(element: MarkdownElement, context: CGContext, rect: CGRect) {
-        print("Rendering element: '\(element.content)' in rect: \(rect)")
+    // 增强版PDF元素渲染
+    private func renderEnhancedElementToPDF(element: EnhancedMarkdownElement, context: CGContext, rect: CGRect) {
+        print("Rendering enhanced element: '\(element.content)' in rect: \(rect)")
         
-        // 使用预览页面相同的逻辑和样式
         switch element.type {
-        case .heading1:
-            // 24pt 粗体，与预览一致
-            drawFormattedText(element, baseFont: UIFont.boldSystemFont(ofSize: 24), rect: rect, context: context)
-            
-        case .heading2:
-            // 20pt 粗体，与预览一致
-            drawFormattedText(element, baseFont: UIFont.boldSystemFont(ofSize: 20), rect: rect, context: context)
-            
-        case .heading3:
-            // 18pt 粗体，与预览一致
-            drawFormattedText(element, baseFont: UIFont.boldSystemFont(ofSize: 18), rect: rect, context: context)
+        case .heading(let level):
+            let font: UIFont
+            switch level {
+            case 1: font = UIFont.boldSystemFont(ofSize: 24)
+            case 2: font = UIFont.boldSystemFont(ofSize: 20)
+            case 3: font = UIFont.boldSystemFont(ofSize: 18)
+            case 4: font = UIFont.boldSystemFont(ofSize: 16)
+            case 5: font = UIFont.boldSystemFont(ofSize: 14)
+            default: font = UIFont.boldSystemFont(ofSize: 12) // level 6
+            }
+            drawEnhancedFormattedText(element, baseFont: font, rect: rect, context: context)
             
         case .paragraph:
-            // 16pt 常规字体，与预览一致，使用formattedContent处理内嵌格式
-            drawFormattedText(element, baseFont: UIFont.systemFont(ofSize: 16), rect: rect, context: context)
+            drawEnhancedFormattedText(element, baseFont: UIFont.systemFont(ofSize: 16), rect: rect, context: context)
             
-        case .listItem:
-            // 16pt + 项目符号，使用formattedContent处理内嵌格式
+        case .unorderedList:
             let bulletPoint = "• "
-            drawBulletListItem(element, bulletPoint: bulletPoint, baseFont: UIFont.systemFont(ofSize: 16), rect: rect, context: context)
+            drawEnhancedBulletListItem(element, bulletPoint: bulletPoint, baseFont: UIFont.systemFont(ofSize: 16), rect: rect, context: context)
+            
+        case .orderedList:
+            let bulletPoint = "▪ " // 使用不同的符号区分有序列表
+            drawEnhancedBulletListItem(element, bulletPoint: bulletPoint, baseFont: UIFont.systemFont(ofSize: 16), rect: rect, context: context)
             
         case .quote:
-            // 16pt 斜体 + 左侧引用线，使用formattedContent处理内嵌格式
-            drawFormattedText(element, baseFont: UIFont.italicSystemFont(ofSize: 16), rect: rect, context: context)
-            // 绘制左侧引用线，与预览一致
+            drawEnhancedFormattedText(element, baseFont: UIFont.italicSystemFont(ofSize: 16), rect: rect, context: context)
+            // 绘制左侧引用线
             context.setStrokeColor(UIColor.blue.cgColor)
             context.setLineWidth(3)
             context.move(to: CGPoint(x: rect.minX - 10, y: rect.minY))
@@ -443,20 +591,28 @@ class SimpleMarkdownViewModel: ObservableObject {
             context.strokePath()
             
         case .codeBlock:
-            // 14pt 等宽字体 + 灰色背景，代码块不需要格式化
             context.setFillColor(UIColor.lightGray.cgColor)
             context.fill(rect.insetBy(dx: -5, dy: -5))
-            drawPlainText(element.content.isEmpty ? "[空内容]" : element.content, 
-                         font: UIFont.monospacedSystemFont(ofSize: 14, weight: .regular),
-                         color: .black, rect: rect, context: context)
+            drawPlainTextToPDF(element.content.isEmpty ? "[空内容]" : element.content, 
+                              font: UIFont.monospacedSystemFont(ofSize: 14, weight: .regular),
+                              color: .black, rect: rect, context: context)
+            
+        case .horizontalRule:
+            // 绘制水平分割线
+            context.setStrokeColor(UIColor.systemGray.cgColor)
+            context.setLineWidth(1)
+            let lineY = rect.midY
+            context.move(to: CGPoint(x: rect.minX, y: lineY))
+            context.addLine(to: CGPoint(x: rect.maxX, y: lineY))
+            context.strokePath()
         }
     }
     
-    private func drawFormattedText(_ element: MarkdownElement, baseFont: UIFont, rect: CGRect, context: CGContext) {
-        // 直接使用预览页面的formattedContent（AttributedString），已经处理了所有Markdown格式
+    private func drawEnhancedFormattedText(_ element: EnhancedMarkdownElement, baseFont: UIFont, rect: CGRect, context: CGContext) {
+        // 直接使用element.formattedContent，它已经处理了所有Markdown格式
         let attributedString = NSAttributedString(element.formattedContent)
         
-        // 调整基础字体大小以匹配预览
+        // 调整基础字体大小以匹配PDF输出
         let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
         let range = NSRange(location: 0, length: mutableAttributedString.length)
         
@@ -485,7 +641,7 @@ class SimpleMarkdownViewModel: ObservableObject {
         UIGraphicsPopContext()
     }
     
-    private func drawBulletListItem(_ element: MarkdownElement, bulletPoint: String, baseFont: UIFont, rect: CGRect, context: CGContext) {
+    private func drawEnhancedBulletListItem(_ element: EnhancedMarkdownElement, bulletPoint: String, baseFont: UIFont, rect: CGRect, context: CGContext) {
         // 为列表项添加项目符号，然后使用formattedContent
         let bulletAttributedString = NSMutableAttributedString(string: bulletPoint, attributes: [
             .font: baseFont,
@@ -520,7 +676,7 @@ class SimpleMarkdownViewModel: ObservableObject {
         UIGraphicsPopContext()
     }
     
-    private func drawPlainText(_ text: String, font: UIFont, color: UIColor, rect: CGRect, context: CGContext) {
+    private func drawPlainTextToPDF(_ text: String, font: UIFont, color: UIColor, rect: CGRect, context: CGContext) {
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: color
@@ -532,6 +688,10 @@ class SimpleMarkdownViewModel: ObservableObject {
         attributedString.draw(in: rect)
         UIGraphicsPopContext()
     }
+    
+    
+    
+    
     
     
     private func savePDFToFiles(data: Data) {
@@ -588,66 +748,117 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     private func convertMarkdownToHTML(_ markdown: String) -> String {
-        var html = markdown
+        // 使用新的增强解析器解析Markdown内容
+        let elements = parseEnhancedMarkdownForHTML(markdown)
+        var htmlContent: [String] = []
+        var inUnorderedList = false
+        var inOrderedList = false
         
-        // 替换标题
-        html = html.replacingOccurrences(of: "### (.+)", with: "<h3>$1</h3>", options: .regularExpression)
-        html = html.replacingOccurrences(of: "## (.+)", with: "<h2>$1</h2>", options: .regularExpression)
-        html = html.replacingOccurrences(of: "# (.+)", with: "<h1>$1</h1>", options: .regularExpression)
-        
-        // 替换粗体和斜体
-        html = html.replacingOccurrences(of: "\\*\\*(.+?)\\*\\*", with: "<strong>$1</strong>", options: .regularExpression)
-        html = html.replacingOccurrences(of: "\\*(.+?)\\*", with: "<em>$1</em>", options: .regularExpression)
-        
-        // 替换行内代码
-        html = html.replacingOccurrences(of: "`(.+?)`", with: "<code>$1</code>", options: .regularExpression)
-        
-        // 替换列表项
-        html = html.replacingOccurrences(of: "^- (.+)", with: "<li>$1</li>", options: .regularExpression)
-        html = html.replacingOccurrences(of: "^\\* (.+)", with: "<li>$1</li>", options: .regularExpression)
-        
-        // 替换引用
-        html = html.replacingOccurrences(of: "^> (.+)", with: "<blockquote>$1</blockquote>", options: .regularExpression)
-        
-        // 处理段落
-        let lines = html.components(separatedBy: .newlines)
-        var processedLines: [String] = []
-        var inList = false
-        
-        for line in lines {
-            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
-            
-            if trimmedLine.isEmpty {
-                if inList {
-                    processedLines.append("</ul>")
-                    inList = false
+        for element in elements {
+            switch element.type {
+            case .heading(let level):
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
                 }
-                processedLines.append("<br>")
-            } else if trimmedLine.hasPrefix("<li>") {
-                if !inList {
-                    processedLines.append("<ul>")
-                    inList = true
-                }
-                processedLines.append(trimmedLine)
-            } else {
-                if inList {
-                    processedLines.append("</ul>")
-                    inList = false
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
                 }
                 
-                if !trimmedLine.hasPrefix("<h") && !trimmedLine.hasPrefix("<blockquote>") {
-                    processedLines.append("<p>\(trimmedLine)</p>")
-                } else {
-                    processedLines.append(trimmedLine)
+                let plainText = extractPlainTextFromAttributedString(element.formattedContent)
+                htmlContent.append("<h\(level)>\(escapeHTML(plainText))</h\(level)>")
+                
+            case .paragraph:
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
                 }
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
+                }
+                
+                let htmlText = convertAttributedStringToHTML(element.formattedContent)
+                htmlContent.append("<p>\(htmlText)</p>")
+                
+            case .unorderedList:
+                if !inUnorderedList {
+                    if inOrderedList {
+                        htmlContent.append("</ol>")
+                        inOrderedList = false
+                    }
+                    htmlContent.append("<ul>")
+                    inUnorderedList = true
+                }
+                let htmlText = convertAttributedStringToHTML(element.formattedContent)
+                htmlContent.append("<li>\(htmlText)</li>")
+                
+            case .orderedList:
+                if !inOrderedList {
+                    if inUnorderedList {
+                        htmlContent.append("</ul>")
+                        inUnorderedList = false
+                    }
+                    htmlContent.append("<ol>")
+                    inOrderedList = true
+                }
+                let htmlText = convertAttributedStringToHTML(element.formattedContent)
+                htmlContent.append("<li>\(htmlText)</li>")
+                
+            case .quote:
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
+                }
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
+                }
+                
+                let htmlText = convertAttributedStringToHTML(element.formattedContent)
+                htmlContent.append("<blockquote>\(htmlText)</blockquote>")
+                
+            case .codeBlock:
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
+                }
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
+                }
+                
+                htmlContent.append("<pre><code>\(escapeHTML(element.content))</code></pre>")
+                
+            case .horizontalRule:
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
+                }
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
+                }
+                
+                htmlContent.append("<hr>")
             }
         }
         
-        if inList {
-            processedLines.append("</ul>")
+        // 关闭任何仍然开放的列表
+        if inUnorderedList {
+            htmlContent.append("</ul>")
+        }
+        if inOrderedList {
+            htmlContent.append("</ol>")
         }
         
-        let bodyContent = processedLines.joined(separator: "\n")
+        let bodyContent = htmlContent.joined(separator: "\n")
         
         return """
         <!DOCTYPE html>
@@ -665,7 +876,7 @@ class SimpleMarkdownViewModel: ObservableObject {
                     padding: 20px;
                     color: #333;
                 }
-                h1, h2, h3 {
+                h1, h2, h3, h4, h5, h6 {
                     color: #2c3e50;
                     margin-top: 24px;
                     margin-bottom: 16px;
@@ -683,27 +894,60 @@ class SimpleMarkdownViewModel: ObservableObject {
                 h3 {
                     font-size: 1.2em;
                 }
+                h4 {
+                    font-size: 1.1em;
+                }
+                h5 {
+                    font-size: 1em;
+                    font-weight: 600;
+                }
+                h6 {
+                    font-size: 0.9em;
+                    font-weight: 600;
+                }
                 code {
                     background-color: #f4f4f4;
                     padding: 2px 4px;
                     border-radius: 3px;
                     font-family: Monaco, 'Courier New', monospace;
                 }
+                pre {
+                    background-color: #f4f4f4;
+                    padding: 16px;
+                    border-radius: 6px;
+                    overflow-x: auto;
+                }
+                pre code {
+                    background: none;
+                    padding: 0;
+                }
                 blockquote {
                     border-left: 4px solid #ddd;
-                    margin: 0;
+                    margin: 0 0 16px 0;
                     padding-left: 16px;
                     color: #666;
                     font-style: italic;
                 }
-                ul {
+                ul, ol {
                     padding-left: 20px;
+                    margin-bottom: 16px;
                 }
                 li {
                     margin-bottom: 4px;
                 }
                 p {
                     margin-bottom: 16px;
+                }
+                hr {
+                    border: none;
+                    border-top: 1px solid #ddd;
+                    margin: 24px 0;
+                }
+                strong {
+                    font-weight: 600;
+                }
+                em {
+                    font-style: italic;
                 }
             </style>
         </head>
@@ -712,6 +956,125 @@ class SimpleMarkdownViewModel: ObservableObject {
         </body>
         </html>
         """
+    }
+    
+    // 专门为HTML使用的增强解析器
+    private func parseEnhancedMarkdownForHTML(_ text: String) -> [EnhancedMarkdownElement] {
+        let lines = text.components(separatedBy: .newlines)
+        var elements: [EnhancedMarkdownElement] = []
+        var codeBlockContent: [String] = []
+        var inCodeBlock = false
+        var codeBlockLanguage = ""
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            // 处理代码块
+            if trimmedLine.hasPrefix("```") {
+                if inCodeBlock {
+                    // 结束代码块
+                    let fullContent = codeBlockContent.joined(separator: "\n")
+                    elements.append(EnhancedMarkdownElement(
+                        id: index, 
+                        type: .codeBlock(language: codeBlockLanguage), 
+                        content: fullContent, 
+                        formattedContent: AttributedString(fullContent)
+                    ))
+                    codeBlockContent = []
+                    inCodeBlock = false
+                    codeBlockLanguage = ""
+                } else {
+                    // 开始代码块
+                    inCodeBlock = true
+                    codeBlockLanguage = String(trimmedLine.dropFirst(3))
+                }
+                continue
+            }
+            
+            if inCodeBlock {
+                codeBlockContent.append(line) // 保持原始缩进
+                continue
+            }
+            
+            if trimmedLine.isEmpty {
+                continue
+            } else if trimmedLine.hasPrefix("######") {
+                let content = String(trimmedLine.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 6), content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if trimmedLine.hasPrefix("#####") {
+                let content = String(trimmedLine.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 5), content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if trimmedLine.hasPrefix("####") {
+                let content = String(trimmedLine.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 4), content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if trimmedLine.hasPrefix("###") {
+                let content = String(trimmedLine.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 3), content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if trimmedLine.hasPrefix("##") {
+                let content = String(trimmedLine.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 2), content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if trimmedLine.hasPrefix("#") {
+                let content = String(trimmedLine.dropFirst(1)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 1), content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") || trimmedLine.hasPrefix("+ ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(EnhancedMarkdownElement(id: index, type: .unorderedList, content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if let match = trimmedLine.range(of: "^\\d+\\. ", options: .regularExpression) {
+                let content = String(trimmedLine[match.upperBound...])
+                elements.append(EnhancedMarkdownElement(id: index, type: .orderedList, content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if trimmedLine.hasPrefix("> ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(EnhancedMarkdownElement(id: index, type: .quote, content: content, formattedContent: createEnhancedAttributedStringForHTML(content)))
+            } else if trimmedLine == "---" || trimmedLine == "***" || trimmedLine == "___" {
+                elements.append(EnhancedMarkdownElement(id: index, type: .horizontalRule, content: "", formattedContent: AttributedString("")))
+            } else {
+                elements.append(EnhancedMarkdownElement(id: index, type: .paragraph, content: trimmedLine, formattedContent: createEnhancedAttributedStringForHTML(trimmedLine)))
+            }
+        }
+        
+        return elements
+    }
+    
+    // 为HTML创建增强的AttributedString
+    private func createEnhancedAttributedStringForHTML(_ text: String) -> AttributedString {
+        // 使用完整的markdown语法支持
+        do {
+            let attributedString = try AttributedString(markdown: text, options: .init(interpretedSyntax: .full))
+            return attributedString
+        } catch {
+            // 如果解析失败，返回原始文本
+            return AttributedString(text)
+        }
+    }
+    
+    // 将AttributedString转换为HTML标记
+    private func convertAttributedStringToHTML(_ attributedString: AttributedString) -> String {
+        // 简化实现：直接提取纯文本并转换常见格式
+        let plainText = extractPlainTextFromAttributedString(attributedString)
+        
+        // 使用简单的正则表达式转换基本格式
+        var htmlText = escapeHTML(plainText)
+        
+        // 转换粗体
+        htmlText = htmlText.replacingOccurrences(of: "\\*\\*(.+?)\\*\\*", with: "<strong>$1</strong>", options: .regularExpression)
+        
+        // 转换斜体
+        htmlText = htmlText.replacingOccurrences(of: "\\*(.+?)\\*", with: "<em>$1</em>", options: .regularExpression)
+        
+        // 转换行内代码
+        htmlText = htmlText.replacingOccurrences(of: "`(.+?)`", with: "<code>$1</code>", options: .regularExpression)
+        
+        return htmlText
+    }
+    
+    // HTML转义
+    private func escapeHTML(_ text: String) -> String {
+        return text
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
     }
     
     func exportAsMarkdown() {
@@ -738,66 +1101,117 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     private func convertMarkdownToWordHTML(_ markdown: String) -> String {
-        var html = markdown
+        // 使用新的增强解析器解析Markdown内容
+        let elements = parseEnhancedMarkdownForWord(markdown)
+        var htmlContent: [String] = []
+        var inUnorderedList = false
+        var inOrderedList = false
         
-        // 替换标题
-        html = html.replacingOccurrences(of: "### (.+)", with: "<h3>$1</h3>", options: .regularExpression)
-        html = html.replacingOccurrences(of: "## (.+)", with: "<h2>$1</h2>", options: .regularExpression)
-        html = html.replacingOccurrences(of: "# (.+)", with: "<h1>$1</h1>", options: .regularExpression)
-        
-        // 替换粗体和斜体
-        html = html.replacingOccurrences(of: "\\*\\*(.+?)\\*\\*", with: "<strong>$1</strong>", options: .regularExpression)
-        html = html.replacingOccurrences(of: "\\*(.+?)\\*", with: "<em>$1</em>", options: .regularExpression)
-        
-        // 替换行内代码
-        html = html.replacingOccurrences(of: "`(.+?)`", with: "<code>$1</code>", options: .regularExpression)
-        
-        // 替换列表项
-        html = html.replacingOccurrences(of: "^- (.+)", with: "<li>$1</li>", options: .regularExpression)
-        html = html.replacingOccurrences(of: "^\\* (.+)", with: "<li>$1</li>", options: .regularExpression)
-        
-        // 替换引用
-        html = html.replacingOccurrences(of: "^> (.+)", with: "<blockquote>$1</blockquote>", options: .regularExpression)
-        
-        // 处理段落
-        let lines = html.components(separatedBy: .newlines)
-        var processedLines: [String] = []
-        var inList = false
-        
-        for line in lines {
-            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
-            
-            if trimmedLine.isEmpty {
-                if inList {
-                    processedLines.append("</ul>")
-                    inList = false
+        for element in elements {
+            switch element.type {
+            case .heading(let level):
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
                 }
-                processedLines.append("<br>")
-            } else if trimmedLine.hasPrefix("<li>") {
-                if !inList {
-                    processedLines.append("<ul>")
-                    inList = true
-                }
-                processedLines.append(trimmedLine)
-            } else {
-                if inList {
-                    processedLines.append("</ul>")
-                    inList = false
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
                 }
                 
-                if !trimmedLine.hasPrefix("<h") && !trimmedLine.hasPrefix("<blockquote>") {
-                    processedLines.append("<p>\(trimmedLine)</p>")
-                } else {
-                    processedLines.append(trimmedLine)
+                let plainText = extractPlainTextFromAttributedString(element.formattedContent)
+                htmlContent.append("<h\(level)>\(escapeHTML(plainText))</h\(level)>")
+                
+            case .paragraph:
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
                 }
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
+                }
+                
+                let htmlText = convertAttributedStringToHTML(element.formattedContent)
+                htmlContent.append("<p>\(htmlText)</p>")
+                
+            case .unorderedList:
+                if !inUnorderedList {
+                    if inOrderedList {
+                        htmlContent.append("</ol>")
+                        inOrderedList = false
+                    }
+                    htmlContent.append("<ul>")
+                    inUnorderedList = true
+                }
+                let htmlText = convertAttributedStringToHTML(element.formattedContent)
+                htmlContent.append("<li>\(htmlText)</li>")
+                
+            case .orderedList:
+                if !inOrderedList {
+                    if inUnorderedList {
+                        htmlContent.append("</ul>")
+                        inUnorderedList = false
+                    }
+                    htmlContent.append("<ol>")
+                    inOrderedList = true
+                }
+                let htmlText = convertAttributedStringToHTML(element.formattedContent)
+                htmlContent.append("<li>\(htmlText)</li>")
+                
+            case .quote:
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
+                }
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
+                }
+                
+                let htmlText = convertAttributedStringToHTML(element.formattedContent)
+                htmlContent.append("<blockquote>\(htmlText)</blockquote>")
+                
+            case .codeBlock:
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
+                }
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
+                }
+                
+                htmlContent.append("<pre><code>\(escapeHTML(element.content))</code></pre>")
+                
+            case .horizontalRule:
+                // 关闭任何开放的列表
+                if inUnorderedList {
+                    htmlContent.append("</ul>")
+                    inUnorderedList = false
+                }
+                if inOrderedList {
+                    htmlContent.append("</ol>")
+                    inOrderedList = false
+                }
+                
+                htmlContent.append("<hr>")
             }
         }
         
-        if inList {
-            processedLines.append("</ul>")
+        // 关闭任何仍然开放的列表
+        if inUnorderedList {
+            htmlContent.append("</ul>")
+        }
+        if inOrderedList {
+            htmlContent.append("</ol>")
         }
         
-        let bodyContent = processedLines.joined(separator: "\n")
+        let bodyContent = htmlContent.joined(separator: "\n")
         
         return """
         <!DOCTYPE html>
@@ -837,7 +1251,7 @@ class SimpleMarkdownViewModel: ObservableObject {
                     -ms-text-size-adjust: 100%;
                 }
                 
-                h1, h2, h3 {
+                h1, h2, h3, h4, h5, h6 {
                     color: #2c3e50;
                     margin-top: 24px;
                     margin-bottom: 16px;
@@ -861,6 +1275,23 @@ class SimpleMarkdownViewModel: ObservableObject {
                 h3 {
                     font-size: 20px;
                     color: #34495e;
+                }
+                
+                h4 {
+                    font-size: 18px;
+                    color: #34495e;
+                }
+                
+                h5 {
+                    font-size: 16px;
+                    color: #34495e;
+                    font-weight: 600;
+                }
+                
+                h6 {
+                    font-size: 14px;
+                    color: #34495e;
+                    font-weight: 600;
                 }
                 
                 p {
@@ -900,9 +1331,29 @@ class SimpleMarkdownViewModel: ObservableObject {
                     page-break-inside: avoid;
                 }
                 
-                ul {
+                ul, ol {
                     margin: 16px 0;
                     padding-left: 24px;
+                }
+                
+                pre {
+                    background-color: #f8f9fa;
+                    padding: 16px;
+                    border-radius: 6px;
+                    overflow-x: auto;
+                    border: 1px solid #e1e4e8;
+                }
+                
+                pre code {
+                    background: none;
+                    padding: 0;
+                    border: none;
+                }
+                
+                hr {
+                    border: none;
+                    border-top: 1px solid #ddd;
+                    margin: 24px 0;
                 }
                 
                 li {
@@ -931,6 +1382,95 @@ class SimpleMarkdownViewModel: ObservableObject {
         """
     }
     
+    // 专门为Word使用的增强解析器
+    private func parseEnhancedMarkdownForWord(_ text: String) -> [EnhancedMarkdownElement] {
+        let lines = text.components(separatedBy: .newlines)
+        var elements: [EnhancedMarkdownElement] = []
+        var codeBlockContent: [String] = []
+        var inCodeBlock = false
+        var codeBlockLanguage = ""
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            // 处理代码块
+            if trimmedLine.hasPrefix("```") {
+                if inCodeBlock {
+                    // 结束代码块
+                    let fullContent = codeBlockContent.joined(separator: "\n")
+                    elements.append(EnhancedMarkdownElement(
+                        id: index, 
+                        type: .codeBlock(language: codeBlockLanguage), 
+                        content: fullContent, 
+                        formattedContent: AttributedString(fullContent)
+                    ))
+                    codeBlockContent = []
+                    inCodeBlock = false
+                    codeBlockLanguage = ""
+                } else {
+                    // 开始代码块
+                    inCodeBlock = true
+                    codeBlockLanguage = String(trimmedLine.dropFirst(3))
+                }
+                continue
+            }
+            
+            if inCodeBlock {
+                codeBlockContent.append(line) // 保持原始缩进
+                continue
+            }
+            
+            if trimmedLine.isEmpty {
+                continue
+            } else if trimmedLine.hasPrefix("######") {
+                let content = String(trimmedLine.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 6), content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if trimmedLine.hasPrefix("#####") {
+                let content = String(trimmedLine.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 5), content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if trimmedLine.hasPrefix("####") {
+                let content = String(trimmedLine.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 4), content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if trimmedLine.hasPrefix("###") {
+                let content = String(trimmedLine.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 3), content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if trimmedLine.hasPrefix("##") {
+                let content = String(trimmedLine.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 2), content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if trimmedLine.hasPrefix("#") {
+                let content = String(trimmedLine.dropFirst(1)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 1), content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") || trimmedLine.hasPrefix("+ ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(EnhancedMarkdownElement(id: index, type: .unorderedList, content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if let match = trimmedLine.range(of: "^\\d+\\. ", options: .regularExpression) {
+                let content = String(trimmedLine[match.upperBound...])
+                elements.append(EnhancedMarkdownElement(id: index, type: .orderedList, content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if trimmedLine.hasPrefix("> ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(EnhancedMarkdownElement(id: index, type: .quote, content: content, formattedContent: createEnhancedAttributedStringForWord(content)))
+            } else if trimmedLine == "---" || trimmedLine == "***" || trimmedLine == "___" {
+                elements.append(EnhancedMarkdownElement(id: index, type: .horizontalRule, content: "", formattedContent: AttributedString("")))
+            } else {
+                elements.append(EnhancedMarkdownElement(id: index, type: .paragraph, content: trimmedLine, formattedContent: createEnhancedAttributedStringForWord(trimmedLine)))
+            }
+        }
+        
+        return elements
+    }
+    
+    // 为Word创建增强的AttributedString
+    private func createEnhancedAttributedStringForWord(_ text: String) -> AttributedString {
+        // 使用完整的markdown语法支持
+        do {
+            let attributedString = try AttributedString(markdown: text, options: .init(interpretedSyntax: .full))
+            return attributedString
+        } catch {
+            // 如果解析失败，返回原始文本
+            return AttributedString(text)
+        }
+    }
+    
     private func showToast(message: String) {
         toastMessage = message
         showToast = true
@@ -940,95 +1480,189 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
 }
 
-struct MarkdownPreviewView: View {
+
+// MARK: - 专业Markdown预览组件（改进版本）
+struct ProfessionalMarkdownPreview: View {
     let content: String
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            ForEach(parseMarkdown(content), id: \.id) { element in
-                renderElement(element)
+            if content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text("在左侧编辑器中输入Markdown内容...")
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                // 使用增强版的markdown解析器
+                ForEach(parseEnhancedMarkdown(content), id: \.id) { element in
+                    renderEnhancedElement(element)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
-    private func parseMarkdown(_ text: String) -> [MarkdownElement] {
+    // 增强版Markdown解析器 - 支持更多格式
+    private func parseEnhancedMarkdown(_ text: String) -> [EnhancedMarkdownElement] {
         let lines = text.components(separatedBy: .newlines)
-        var elements: [MarkdownElement] = []
+        var elements: [EnhancedMarkdownElement] = []
+        var codeBlockContent: [String] = []
+        var inCodeBlock = false
+        var codeBlockLanguage = ""
         
         for (index, line) in lines.enumerated() {
             let trimmedLine = line.trimmingCharacters(in: .whitespaces)
             
+            // 处理代码块
+            if trimmedLine.hasPrefix("```") {
+                if inCodeBlock {
+                    // 结束代码块
+                    let fullContent = codeBlockContent.joined(separator: "\n")
+                    elements.append(EnhancedMarkdownElement(
+                        id: index, 
+                        type: .codeBlock(language: codeBlockLanguage), 
+                        content: fullContent, 
+                        formattedContent: AttributedString(fullContent)
+                    ))
+                    codeBlockContent = []
+                    inCodeBlock = false
+                    codeBlockLanguage = ""
+                } else {
+                    // 开始代码块
+                    inCodeBlock = true
+                    codeBlockLanguage = String(trimmedLine.dropFirst(3))
+                }
+                continue
+            }
+            
+            if inCodeBlock {
+                codeBlockContent.append(line) // 保持原始缩进
+                continue
+            }
+            
             if trimmedLine.isEmpty {
                 continue
-            } else if trimmedLine.hasPrefix("# ") {
+            } else if trimmedLine.hasPrefix("######") {
+                let content = String(trimmedLine.dropFirst(6)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 6), content: content, formattedContent: createEnhancedAttributedString(content)))
+            } else if trimmedLine.hasPrefix("#####") {
+                let content = String(trimmedLine.dropFirst(5)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 5), content: content, formattedContent: createEnhancedAttributedString(content)))
+            } else if trimmedLine.hasPrefix("####") {
+                let content = String(trimmedLine.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 4), content: content, formattedContent: createEnhancedAttributedString(content)))
+            } else if trimmedLine.hasPrefix("###") {
+                let content = String(trimmedLine.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 3), content: content, formattedContent: createEnhancedAttributedString(content)))
+            } else if trimmedLine.hasPrefix("##") {
+                let content = String(trimmedLine.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 2), content: content, formattedContent: createEnhancedAttributedString(content)))
+            } else if trimmedLine.hasPrefix("#") {
+                let content = String(trimmedLine.dropFirst(1)).trimmingCharacters(in: .whitespaces)
+                elements.append(EnhancedMarkdownElement(id: index, type: .heading(level: 1), content: content, formattedContent: createEnhancedAttributedString(content)))
+            } else if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") || trimmedLine.hasPrefix("+ ") {
                 let content = String(trimmedLine.dropFirst(2))
-                elements.append(MarkdownElement(id: index, type: .heading1, content: content, formattedContent: createAttributedString(content)))
-            } else if trimmedLine.hasPrefix("## ") {
-                let content = String(trimmedLine.dropFirst(3))
-                elements.append(MarkdownElement(id: index, type: .heading2, content: content, formattedContent: createAttributedString(content)))
-            } else if trimmedLine.hasPrefix("### ") {
-                let content = String(trimmedLine.dropFirst(4))
-                elements.append(MarkdownElement(id: index, type: .heading3, content: content, formattedContent: createAttributedString(content)))
-            } else if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") {
-                let content = String(trimmedLine.dropFirst(2))
-                elements.append(MarkdownElement(id: index, type: .listItem, content: content, formattedContent: createAttributedString(content)))
+                elements.append(EnhancedMarkdownElement(id: index, type: .unorderedList, content: content, formattedContent: createEnhancedAttributedString(content)))
+            } else if let match = trimmedLine.range(of: "^\\d+\\. ", options: .regularExpression) {
+                let content = String(trimmedLine[match.upperBound...])
+                elements.append(EnhancedMarkdownElement(id: index, type: .orderedList, content: content, formattedContent: createEnhancedAttributedString(content)))
             } else if trimmedLine.hasPrefix("> ") {
                 let content = String(trimmedLine.dropFirst(2))
-                elements.append(MarkdownElement(id: index, type: .quote, content: content, formattedContent: createAttributedString(content)))
-            } else if trimmedLine.hasPrefix("```") {
-                elements.append(MarkdownElement(id: index, type: .codeBlock, content: trimmedLine, formattedContent: AttributedString(trimmedLine)))
+                elements.append(EnhancedMarkdownElement(id: index, type: .quote, content: content, formattedContent: createEnhancedAttributedString(content)))
+            } else if trimmedLine == "---" || trimmedLine == "***" || trimmedLine == "___" {
+                elements.append(EnhancedMarkdownElement(id: index, type: .horizontalRule, content: "", formattedContent: AttributedString("")))
             } else {
-                elements.append(MarkdownElement(id: index, type: .paragraph, content: trimmedLine, formattedContent: createAttributedString(trimmedLine)))
+                elements.append(EnhancedMarkdownElement(id: index, type: .paragraph, content: trimmedLine, formattedContent: createEnhancedAttributedString(trimmedLine)))
             }
         }
         
         return elements
     }
     
-    private func createAttributedString(_ text: String) -> AttributedString {
-        let attributedString = try! AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))
-        return attributedString
+    // 更完善的AttributedString创建
+    private func createEnhancedAttributedString(_ text: String) -> AttributedString {
+        // 使用完整的markdown语法支持
+        do {
+            let attributedString = try AttributedString(markdown: text, options: .init(interpretedSyntax: .full))
+            return attributedString
+        } catch {
+            // 如果解析失败，返回原始文本
+            return AttributedString(text)
+        }
     }
     
     @ViewBuilder
-    private func renderElement(_ element: MarkdownElement) -> some View {
+    private func renderEnhancedElement(_ element: EnhancedMarkdownElement) -> some View {
         switch element.type {
-        case .heading1:
-            Text(element.content)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.primary, .primary.opacity(0.8)],
-                        startPoint: .leading,
-                        endPoint: .trailing
+        case .heading(let level):
+            switch level {
+            case 1:
+                Text(element.formattedContent)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.primary, .primary.opacity(0.8)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
-                )
-                .padding(.vertical, 16)
-                .padding(.bottom, 8)
-        case .heading2:
-            Text(element.content)
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
-                .foregroundColor(.primary)
-                .padding(.vertical, 12)
-                .padding(.bottom, 6)
-        case .heading3:
-            Text(element.content)
-                .font(.system(size: 18, weight: .medium, design: .rounded))
-                .foregroundColor(.primary)
-                .padding(.vertical, 10)
-                .padding(.bottom, 4)
+                    .padding(.vertical, 16)
+                    .padding(.bottom, 8)
+            case 2:
+                Text(element.formattedContent)
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.vertical, 12)
+                    .padding(.bottom, 6)
+            case 3:
+                Text(element.formattedContent)
+                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.vertical, 10)
+                    .padding(.bottom, 4)
+            case 4:
+                Text(element.formattedContent)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.vertical, 8)
+            case 5:
+                Text(element.formattedContent)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.vertical, 6)
+            default: // level 6
+                Text(element.formattedContent)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(.primary)
+                    .padding(.vertical, 4)
+            }
         case .paragraph:
             Text(element.formattedContent)
                 .font(.system(size: 16, weight: .regular))
                 .lineSpacing(6)
                 .foregroundColor(.primary)
                 .padding(.vertical, 8)
-        case .listItem:
+        case .unorderedList:
             HStack(alignment: .top, spacing: 12) {
                 Circle()
                     .fill(Color.blue)
                     .frame(width: 6, height: 6)
+                    .padding(.top, 8)
+                
+                Text(element.formattedContent)
+                    .font(.system(size: 16))
+                    .lineSpacing(4)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            .padding(.vertical, 4)
+            .padding(.leading, 8)
+        case .orderedList:
+            HStack(alignment: .top, spacing: 12) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.blue)
+                    .frame(width: 8, height: 8)
                     .padding(.top, 8)
                 
                 Text(element.formattedContent)
@@ -1083,20 +1717,32 @@ struct MarkdownPreviewView: View {
                         )
                 )
                 .padding(.vertical, 8)
+        case .horizontalRule:
+            Divider()
+                .overlay(Color.secondary)
+                .padding(.vertical, 16)
         }
     }
 }
 
-struct MarkdownElement {
+// MARK: - 增强版Markdown数据结构
+struct EnhancedMarkdownElement {
     let id: Int
-    let type: MarkdownElementType
+    let type: EnhancedMarkdownElementType
     let content: String
     let formattedContent: AttributedString
 }
 
-enum MarkdownElementType {
-    case heading1, heading2, heading3, paragraph, listItem, quote, codeBlock
+enum EnhancedMarkdownElementType {
+    case heading(level: Int)
+    case paragraph
+    case unorderedList
+    case orderedList
+    case quote
+    case codeBlock(language: String)
+    case horizontalRule
 }
+
 
 struct SimpleToastView: View {
     let message: String
@@ -1547,7 +2193,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(24)
                 } else {
-                    MarkdownPreviewView(content: viewModel.markdownText)
+                    ProfessionalMarkdownPreview(content: viewModel.markdownText)
                         .padding(isIPad ? 20 : 16)
                 }
             }
