@@ -2574,7 +2574,7 @@ struct ProjectInfoView: View {
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.secondary)
                         
-                        Text("Version 1.0")
+                        Text("Version 1.0.1")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
