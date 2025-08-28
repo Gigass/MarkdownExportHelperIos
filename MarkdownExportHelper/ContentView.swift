@@ -28,6 +28,10 @@ class SimpleMarkdownViewModel: ObservableObject {
     @Published var toastMessage = ""
     @Published var history: [HistoryItem] = []
     @Published var isExportingImage = false
+    @Published var showSaveConfirmation = false
+    @Published var showClearConfirmation = false
+    @Published var showPasteConfirmation = false
+    @Published var showCopyPlainTextConfirmation = false
     
     private let maxHistoryItems = 50
     private let userDefaults = UserDefaults.standard
@@ -88,6 +92,10 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func saveToHistoryManually() {
+        showSaveConfirmation = true
+    }
+    
+    func confirmSaveToHistory() {
         saveToHistory()
         showToast(message: "已保存到历史")
     }
@@ -160,17 +168,107 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func clearContent() {
+        showClearConfirmation = true
+    }
+    
+    func confirmClearContent() {
         markdownText = ""
         showToast(message: "内容已清空")
     }
     
     func pasteFromClipboard() {
+        guard UIPasteboard.general.string != nil && !UIPasteboard.general.string!.isEmpty else {
+            showToast(message: "剪贴板为空")
+            return
+        }
+        showPasteConfirmation = true
+    }
+    
+    func confirmPasteFromClipboard() {
         if let clipboardContent = UIPasteboard.general.string, !clipboardContent.isEmpty {
             markdownText = clipboardContent
             showToast(message: "已从剪贴板粘贴内容")
         } else {
             showToast(message: "剪贴板为空")
         }
+    }
+    
+    func copyPlainText() {
+        showCopyPlainTextConfirmation = true
+    }
+    
+    func confirmCopyPlainText() {
+        let plainText = convertMarkdownToPlainText(markdownText)
+        UIPasteboard.general.string = plainText
+        showToast(message: "已复制纯文本到剪贴板")
+    }
+    
+    private func convertMarkdownToPlainText(_ markdown: String) -> String {
+        // 利用现有的 parseMarkdown 逻辑来提取纯文本
+        let elements = parseMarkdownToElements(markdown)
+        var plainTextLines: [String] = []
+        
+        for element in elements {
+            switch element.type {
+            case .heading1, .heading2, .heading3, .paragraph, .listItem, .quote:
+                // 使用 element.content 已经去掉了Markdown标记的内容
+                // 然后使用 AttributedString 来处理内嵌的格式化（如粗体、斜体等）
+                if let plainString = extractPlainText(from: element.formattedContent) {
+                    plainTextLines.append(plainString)
+                } else {
+                    plainTextLines.append(element.content)
+                }
+            case .codeBlock:
+                // 代码块跳过，不包含在纯文本中
+                continue
+            }
+        }
+        
+        return plainTextLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    private func parseMarkdownToElements(_ text: String) -> [MarkdownElement] {
+        let lines = text.components(separatedBy: .newlines)
+        var elements: [MarkdownElement] = []
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            if trimmedLine.isEmpty {
+                continue
+            } else if trimmedLine.hasPrefix("# ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(MarkdownElement(id: index, type: .heading1, content: content, formattedContent: createAttributedString(content)))
+            } else if trimmedLine.hasPrefix("## ") {
+                let content = String(trimmedLine.dropFirst(3))
+                elements.append(MarkdownElement(id: index, type: .heading2, content: content, formattedContent: createAttributedString(content)))
+            } else if trimmedLine.hasPrefix("### ") {
+                let content = String(trimmedLine.dropFirst(4))
+                elements.append(MarkdownElement(id: index, type: .heading3, content: content, formattedContent: createAttributedString(content)))
+            } else if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(MarkdownElement(id: index, type: .listItem, content: content, formattedContent: createAttributedString(content)))
+            } else if trimmedLine.hasPrefix("> ") {
+                let content = String(trimmedLine.dropFirst(2))
+                elements.append(MarkdownElement(id: index, type: .quote, content: content, formattedContent: createAttributedString(content)))
+            } else if trimmedLine.hasPrefix("```") {
+                elements.append(MarkdownElement(id: index, type: .codeBlock, content: trimmedLine, formattedContent: AttributedString(trimmedLine)))
+            } else {
+                elements.append(MarkdownElement(id: index, type: .paragraph, content: trimmedLine, formattedContent: createAttributedString(trimmedLine)))
+            }
+        }
+        
+        return elements
+    }
+    
+    private func createAttributedString(_ text: String) -> AttributedString {
+        let attributedString = try! AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))
+        return attributedString
+    }
+    
+    private func extractPlainText(from attributedString: AttributedString) -> String? {
+        // AttributedString 的 String 表示已经是纯文本了
+        return String(attributedString.characters)
     }
     
     func exportAsPNG() {
@@ -977,6 +1075,38 @@ struct ContentView: View {
         } message: {
             Text("请选择操作")
         }
+        .confirmationDialog("保存到历史", isPresented: $viewModel.showSaveConfirmation, titleVisibility: .visible) {
+            Button("确认保存") {
+                viewModel.confirmSaveToHistory()
+            }
+            Button("取消", role: .cancel) { }
+        } message: {
+            Text("是否将当前内容保存到历史记录？")
+        }
+        .confirmationDialog("删除内容", isPresented: $viewModel.showClearConfirmation, titleVisibility: .visible) {
+            Button("确认删除", role: .destructive) {
+                viewModel.confirmClearContent()
+            }
+            Button("取消", role: .cancel) { }
+        } message: {
+            Text("确认删除全部编辑器内容？此操作无法撤销。")
+        }
+        .confirmationDialog("从剪贴板粘贴", isPresented: $viewModel.showPasteConfirmation, titleVisibility: .visible) {
+            Button("确认替换") {
+                viewModel.confirmPasteFromClipboard()
+            }
+            Button("取消", role: .cancel) { }
+        } message: {
+            Text("是否用剪贴板内容替换当前所有内容？")
+        }
+        .confirmationDialog("复制纯文本", isPresented: $viewModel.showCopyPlainTextConfirmation, titleVisibility: .visible) {
+            Button("确认复制") {
+                viewModel.confirmCopyPlainText()
+            }
+            Button("取消", role: .cancel) { }
+        } message: {
+            Text("是否复制去除markdown格式的纯文本到剪贴板？")
+        }
         .overlay(
             Group {
                 if viewModel.showToast {
@@ -1193,6 +1323,14 @@ struct ContentView: View {
                     .foregroundColor(.primary)
                 
                 Spacer()
+                
+                // 复制纯文本按钮
+                SmallActionButton(
+                    icon: "doc.on.doc.fill",
+                    color: .purple,
+                    action: { viewModel.copyPlainText() },
+                    isIPad: isIPad
+                )
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
