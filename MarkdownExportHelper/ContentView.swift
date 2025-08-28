@@ -93,17 +93,33 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func exportAsImage(completion: @escaping (UIImage?) -> Void) {
-        isExportingImage = true
+        guard !markdownText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            showToast(message: "内容为空，无法导出")
+            completion(nil)
+            return
+        }
         
+        isExportingImage = true
+        print("Starting image export for content length: \(markdownText.count)")
+        
+        let view = MarkdownPreviewView(content: self.markdownText)
+            .padding(32)
+            .background(Color(.systemBackground))
+        
+        // 使用 DispatchQueue.main.async 延迟执行，避免阻塞当前UI操作
         DispatchQueue.main.async {
-            let view = MarkdownPreviewView(content: self.markdownText)
-                .padding(32)
-                .background(Color(.systemBackground))
-            
             let image = view.renderAsLongImage(width: 750)
             
             self.isExportingImage = false
-            completion(image)
+            
+            if let image = image {
+                print("Image export successful: \(image.size)")
+                completion(image)
+            } else {
+                print("Image export failed")
+                self.showToast(message: "图片生成失败，请尝试减少内容长度")
+                completion(nil)
+            }
         }
     }
     
@@ -179,28 +195,39 @@ class SimpleMarkdownViewModel: ObservableObject {
     }
     
     func exportAsPDF() {
+        guard !markdownText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            showToast(message: "内容为空，无法导出")
+            return
+        }
+        
         // Save to history when exporting
         saveToHistory()
         
         isExportingImage = true
+        print("Starting PDF export for content length: \(markdownText.count)")
         
+        let view = MarkdownPreviewView(content: self.markdownText)
+            .padding(32)
+            .background(Color(.systemBackground))
+        
+        // 使用 DispatchQueue.main.async 延迟执行，确保在主线程
         DispatchQueue.main.async {
-            let view = MarkdownPreviewView(content: self.markdownText)
-                .padding(32)
-                .background(Color(.systemBackground))
-            
             // 先生成图片，然后转换为PDF
             guard let image = view.renderAsLongImage(width: 612) else {
                 self.isExportingImage = false
-                self.showToast(message: "PDF 生成失败")
+                print("PDF export failed: image generation failed")
+                self.showToast(message: "PDF 生成失败，请尝试减少内容长度")
                 return
             }
+            
+            print("PDF image generation successful: \(image.size)")
             
             // 将图片转换为PDF
             let pdfData = self.createPDFFromImage(image)
             
             self.isExportingImage = false
             self.savePDFToFiles(data: pdfData)
+            print("PDF export completed")
         }
     }
     
