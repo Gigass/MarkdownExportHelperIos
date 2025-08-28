@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import PDFKit
+import CoreText
 
 // Temporary inline classes until project structure is fixed
 struct HistoryItem: Identifiable, Codable {
@@ -302,49 +304,235 @@ class SimpleMarkdownViewModel: ObservableObject {
         saveToHistory()
         
         isExportingImage = true
-        print("Starting PDF export for content length: \(markdownText.count)")
+        print("Starting editable PDF export for content length: \(markdownText.count)")
         
-        let view = MarkdownPreviewView(content: self.markdownText)
-            .padding(32)
-            .background(Color(.systemBackground))
-        
-        // 使用 DispatchQueue.main.async 延迟执行，确保在主线程
         DispatchQueue.main.async {
-            // 先生成图片，然后转换为PDF
-            guard let image = view.renderAsLongImage(width: 612) else {
-                self.isExportingImage = false
-                print("PDF export failed: image generation failed")
-                self.showToast(message: "PDF 生成失败，请尝试减少内容长度")
-                return
-            }
-            
-            print("PDF image generation successful: \(image.size)")
-            
-            // 将图片转换为PDF
-            let pdfData = self.createPDFFromImage(image)
+            let pdfData = self.createEditablePDF()
             
             self.isExportingImage = false
             self.savePDFToFiles(data: pdfData)
-            print("PDF export completed")
+            self.showToast(message: "可编辑PDF已生成")
+            print("Editable PDF export completed")
         }
     }
     
-    private func createPDFFromImage(_ image: UIImage) -> Data {
-        let pdfData = NSMutableData()
+    private func createEditablePDF() -> Data {
+        let a4Width: CGFloat = 595 // A4纸的宽度 (点数)
+        let a4Height: CGFloat = 842 // A4纸的高度 (点数)
+        let margin: CGFloat = 50 // 页边距
+        let contentWidth = a4Width - margin * 2
+        let contentHeight = a4Height - margin * 2
         
-        // 使用图片尺寸创建PDF
-        let pdfRect = CGRect(origin: .zero, size: image.size)
+        // 解析Markdown内容
+        let elements = parseMarkdownToElements(markdownText)
+        print("PDF Generation - Elements count: \(elements.count)")
         
-        UIGraphicsBeginPDFContextToData(pdfData, pdfRect, nil)
-        UIGraphicsBeginPDFPage()
+        // 使用 UIGraphicsPDFRenderer 创建可编辑的PDF
+        let pdfData = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: a4Width, height: a4Height)).pdfData { context in
+            var currentY: CGFloat = margin
+            var pageNumber = 1
+            
+            context.beginPage()
+            print("PDF Generation - Started page \(pageNumber)")
+            
+            // 添加测试内容确保PDF不为空
+            if elements.isEmpty {
+                let testText = "PDF生成测试内容"
+                let testAttributes: [NSAttributedString.Key: Any] = [
+                    .font: UIFont.systemFont(ofSize: 16),
+                    .foregroundColor: UIColor.black
+                ]
+                let testAttributedString = NSAttributedString(string: testText, attributes: testAttributes)
+                UIGraphicsPushContext(context.cgContext)
+                testAttributedString.draw(at: CGPoint(x: margin, y: margin))
+                UIGraphicsPopContext()
+                print("PDF Generation - Added test content")
+                return
+            }
+            
+            for (index, element) in elements.enumerated() {
+                let elementHeight = estimateElementHeight(element, width: contentWidth)
+                print("PDF Generation - Element \(index): \(element.type), height: \(elementHeight)")
+                
+                // 检查是否需要新页面
+                if currentY + elementHeight > contentHeight + margin {
+                    // 开始新页面
+                    context.beginPage()
+                    currentY = margin
+                    pageNumber += 1
+                    print("PDF Generation - Started page \(pageNumber)")
+                }
+                
+                // 渲染元素到PDF
+                print("PDF Generation - Rendering element at y: \(currentY)")
+                renderElementToPDF(element: element, 
+                                 context: context.cgContext, 
+                                 rect: CGRect(x: margin, y: currentY, width: contentWidth, height: elementHeight))
+                
+                currentY += elementHeight + 15 // 增加元素间距
+            }
+            
+            print("PDF Generation - Completed with \(pageNumber) pages")
+        }
         
-        // 将图片绘制到PDF页面
-        image.draw(in: pdfRect)
-        
-        UIGraphicsEndPDFContext()
-        
-        return pdfData as Data
+        return pdfData
     }
+    
+    private func estimateElementHeight(_ element: MarkdownElement, width: CGFloat) -> CGFloat {
+        let font: UIFont
+        switch element.type {
+        case .heading1:
+            font = UIFont.boldSystemFont(ofSize: 24)
+        case .heading2:
+            font = UIFont.boldSystemFont(ofSize: 20)
+        case .heading3:
+            font = UIFont.boldSystemFont(ofSize: 18)
+        case .paragraph, .listItem, .quote:
+            font = UIFont.systemFont(ofSize: 16)
+        case .codeBlock:
+            font = UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+        }
+        
+        // 确保文本不为空
+        let textToMeasure = element.content.isEmpty ? " " : element.content
+        
+        let textSize = textToMeasure.boundingRect(
+            with: CGSize(width: width - 20, height: .greatestFiniteMagnitude), // 减去一些边距
+            options: [.usesLineFragmentOrigin, .usesFontLeading],
+            attributes: [.font: font],
+            context: nil
+        )
+        
+        return max(ceil(textSize.height) + 20, 40) // 增加更多的间距和最小高度
+    }
+    
+    private func renderElementToPDF(element: MarkdownElement, context: CGContext, rect: CGRect) {
+        print("Rendering element: '\(element.content)' in rect: \(rect)")
+        
+        // 使用预览页面相同的逻辑和样式
+        switch element.type {
+        case .heading1:
+            // 24pt 粗体，与预览一致
+            drawFormattedText(element, baseFont: UIFont.boldSystemFont(ofSize: 24), rect: rect, context: context)
+            
+        case .heading2:
+            // 20pt 粗体，与预览一致
+            drawFormattedText(element, baseFont: UIFont.boldSystemFont(ofSize: 20), rect: rect, context: context)
+            
+        case .heading3:
+            // 18pt 粗体，与预览一致
+            drawFormattedText(element, baseFont: UIFont.boldSystemFont(ofSize: 18), rect: rect, context: context)
+            
+        case .paragraph:
+            // 16pt 常规字体，与预览一致，使用formattedContent处理内嵌格式
+            drawFormattedText(element, baseFont: UIFont.systemFont(ofSize: 16), rect: rect, context: context)
+            
+        case .listItem:
+            // 16pt + 项目符号，使用formattedContent处理内嵌格式
+            let bulletPoint = "• "
+            drawBulletListItem(element, bulletPoint: bulletPoint, baseFont: UIFont.systemFont(ofSize: 16), rect: rect, context: context)
+            
+        case .quote:
+            // 16pt 斜体 + 左侧引用线，使用formattedContent处理内嵌格式
+            drawFormattedText(element, baseFont: UIFont.italicSystemFont(ofSize: 16), rect: rect, context: context)
+            // 绘制左侧引用线，与预览一致
+            context.setStrokeColor(UIColor.blue.cgColor)
+            context.setLineWidth(3)
+            context.move(to: CGPoint(x: rect.minX - 10, y: rect.minY))
+            context.addLine(to: CGPoint(x: rect.minX - 10, y: rect.maxY))
+            context.strokePath()
+            
+        case .codeBlock:
+            // 14pt 等宽字体 + 灰色背景，代码块不需要格式化
+            context.setFillColor(UIColor.lightGray.cgColor)
+            context.fill(rect.insetBy(dx: -5, dy: -5))
+            drawPlainText(element.content.isEmpty ? "[空内容]" : element.content, 
+                         font: UIFont.monospacedSystemFont(ofSize: 14, weight: .regular),
+                         color: .black, rect: rect, context: context)
+        }
+    }
+    
+    private func drawFormattedText(_ element: MarkdownElement, baseFont: UIFont, rect: CGRect, context: CGContext) {
+        // 直接使用预览页面的formattedContent（AttributedString），已经处理了所有Markdown格式
+        let attributedString = NSAttributedString(element.formattedContent)
+        
+        // 调整基础字体大小以匹配预览
+        let mutableAttributedString = NSMutableAttributedString(attributedString: attributedString)
+        let range = NSRange(location: 0, length: mutableAttributedString.length)
+        
+        // 设置基础字体大小，保持原有的格式（粗体、斜体等）
+        mutableAttributedString.enumerateAttribute(.font, in: range, options: []) { (fontValue, range, _) in
+            if let currentFont = fontValue as? UIFont {
+                let newFont: UIFont
+                if currentFont.fontDescriptor.symbolicTraits.contains(.traitBold) {
+                    newFont = UIFont.boldSystemFont(ofSize: baseFont.pointSize)
+                } else if currentFont.fontDescriptor.symbolicTraits.contains(.traitItalic) {
+                    newFont = UIFont.italicSystemFont(ofSize: baseFont.pointSize)
+                } else {
+                    newFont = baseFont
+                }
+                mutableAttributedString.addAttribute(.font, value: newFont, range: range)
+            } else {
+                mutableAttributedString.addAttribute(.font, value: baseFont, range: range)
+            }
+        }
+        
+        // 确保颜色为黑色
+        mutableAttributedString.addAttribute(.foregroundColor, value: UIColor.black, range: range)
+        
+        UIGraphicsPushContext(context)
+        mutableAttributedString.draw(in: rect)
+        UIGraphicsPopContext()
+    }
+    
+    private func drawBulletListItem(_ element: MarkdownElement, bulletPoint: String, baseFont: UIFont, rect: CGRect, context: CGContext) {
+        // 为列表项添加项目符号，然后使用formattedContent
+        let bulletAttributedString = NSMutableAttributedString(string: bulletPoint, attributes: [
+            .font: baseFont,
+            .foregroundColor: UIColor.black
+        ])
+        
+        let contentAttributedString = NSMutableAttributedString(attributedString: NSAttributedString(element.formattedContent))
+        
+        // 调整内容的字体大小
+        let range = NSRange(location: 0, length: contentAttributedString.length)
+        contentAttributedString.enumerateAttribute(.font, in: range, options: []) { (fontValue, range, _) in
+            if let currentFont = fontValue as? UIFont {
+                let newFont: UIFont
+                if currentFont.fontDescriptor.symbolicTraits.contains(.traitBold) {
+                    newFont = UIFont.boldSystemFont(ofSize: baseFont.pointSize)
+                } else if currentFont.fontDescriptor.symbolicTraits.contains(.traitItalic) {
+                    newFont = UIFont.italicSystemFont(ofSize: baseFont.pointSize)
+                } else {
+                    newFont = baseFont
+                }
+                contentAttributedString.addAttribute(.font, value: newFont, range: range)
+            } else {
+                contentAttributedString.addAttribute(.font, value: baseFont, range: range)
+            }
+        }
+        contentAttributedString.addAttribute(.foregroundColor, value: UIColor.black, range: range)
+        
+        bulletAttributedString.append(contentAttributedString)
+        
+        UIGraphicsPushContext(context)
+        bulletAttributedString.draw(in: rect)
+        UIGraphicsPopContext()
+    }
+    
+    private func drawPlainText(_ text: String, font: UIFont, color: UIColor, rect: CGRect, context: CGContext) {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: color
+        ]
+        
+        let attributedString = NSAttributedString(string: text, attributes: attributes)
+        
+        UIGraphicsPushContext(context)
+        attributedString.draw(in: rect)
+        UIGraphicsPopContext()
+    }
+    
     
     private func savePDFToFiles(data: Data) {
         // 创建一个自定义的活动项提供器
