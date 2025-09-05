@@ -10,6 +10,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>MKExp</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

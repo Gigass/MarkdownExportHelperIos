@@ -53,7 +53,7 @@ class SimpleMarkdownViewModel: ObservableObject {
             showToast(message: "已从剪贴板加载内容")
         } else {
             markdownText = """
-# Markdown Export Helper
+# MKExp
 
 这是一个功能强大的 Markdown 编辑和导出工具。
 
@@ -1980,7 +1980,7 @@ struct ContentView: View {
             
             // iPad中心标题
             if isIPad {
-                Text("Markdown Export Helper")
+                Text("MKExp")
                     .font(.system(size: 28, weight: .semibold, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
@@ -2481,7 +2481,7 @@ struct ProjectInfoView: View {
                             )
                         
                         VStack(spacing: 12) {
-                            Text("Markdown Export Helper")
+                            Text("MKExp")
                                 .font(.system(size: isIPad ? 32 : 24, weight: .bold))
                                 .multilineTextAlignment(.center)
                             
